@@ -8,13 +8,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.rahmatmas.data.supabase.AuthManager
+import com.example.rahmatmas.ui.home.HomeScreenCostumer
 import com.example.rahmatmas.ui.login.LoginAdminScreen
 import com.example.rahmatmas.ui.login.LoginCustomerScreen
 import com.example.rahmatmas.ui.theme.RahmatMasTheme
+import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,20 +42,47 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun RahmatMasApp(modifier: Modifier) {
     val navController = rememberNavController()
+    val authManager = remember { AuthManager() }
+
+    // Collect the authentication state
+    LaunchedEffect(Unit) {
+        authManager.isUserLoggedIn.collectLatest { isLoggedIn ->
+            if (isLoggedIn) {
+                navController.navigate("home") {
+                    popUpTo("logincustomer") { inclusive = true }
+                }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
-        startDestination = "logincostumer",
-        modifier = Modifier
+        startDestination = "logincustomer",
+        modifier = modifier
     ) {
-        composable("logincostumer") {
+        composable("logincustomer") {
             LoginCustomerScreen(
-                onAdminClick = { navController.navigate("loginadmin") }
+                onAdminClick = { navController.navigate("loginadmin") },
+                onLoginSuccess = { 
+                    navController.navigate("home") {
+                        popUpTo("logincustomer") { inclusive = true }
+                    }
+                }
             )
         }
         composable("loginadmin") {
-            LoginAdminScreen()
-            // If you need to navigate back from Admin screen, you'd pass navController to it
+            LoginAdminScreen(
+                onLoginSuccess = { navController.navigate("home") }
+            )
+        }
+        composable("home") {
+            HomeScreenCostumer(
+                onLogout = {
+                    navController.navigate("logincustomer") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

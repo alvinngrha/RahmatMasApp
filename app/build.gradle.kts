@@ -62,9 +62,12 @@ dependencies {
     //navigation compose
     implementation("androidx.navigation:navigation-compose:2.9.1")
 
+    //viewmodel compoee
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
+
     //google
-    implementation("androidx.credentials:credentials:1.5.0-rc01")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0-rc01")
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation ("com.google.android.gms:play-services-auth:21.3.0")
 
@@ -76,6 +79,9 @@ dependencies {
 
     //ktor
     implementation("io.ktor:ktor-client-okhttp:3.0.3")
+
+    // Coil untuk loading image
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.0.4")
 
