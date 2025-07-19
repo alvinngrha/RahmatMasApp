@@ -16,7 +16,7 @@ data class LoginUiState(
     val errorMessage: String? = null
 )
 
-class LoginViewModel : ViewModel() {
+class LoginCostumerViewModel : ViewModel() {
     private val authManager = AuthManager()
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -52,47 +52,5 @@ class LoginViewModel : ViewModel() {
                 }
             }
         }
-    }
-
-//    fun signInAdmin(username: String, password: String, onSuccess: () -> Unit) {
-//        viewModelScope.launch {
-//            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-//
-//            when (val result = authManager.signInAdmin(username, password)) {
-//                is AuthResponse.Success -> {
-//                    _uiState.value = _uiState.value.copy(
-//                        isLoading = false,
-//                        isLoggedIn = true,
-//                        errorMessage = null
-//                    )
-//                    onSuccess()
-//                }
-//                is AuthResponse.Error -> {
-//                    _uiState.value = _uiState.value.copy(
-//                        isLoading = false,
-//                        isLoggedIn = false,
-//                        errorMessage = result.message
-//                    )
-//                }
-//            }
-//        }
-//    }
-
-    fun signOut(onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            when (authManager.signOut()) {
-                is AuthResponse.Success -> {
-                    _uiState.value = _uiState.value.copy(isLoggedIn = false)
-                    onSuccess()
-                }
-                is AuthResponse.Error -> {
-                    // Handle error jika diperlukan
-                }
-            }
-        }
-    }
-
-    fun clearErrorMessage() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 }

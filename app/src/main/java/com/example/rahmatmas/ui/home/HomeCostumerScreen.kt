@@ -38,10 +38,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 
 @Composable
-fun HomeScreenCostumer(
+fun HomeCostumerScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeCostumerViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val user = uiState.user
@@ -78,7 +78,9 @@ fun HomeScreenCostumer(
                             color = Color.White
                         )
                         Text(
-                            text = user?.email ?: "User",
+                            text = user?.userMetadata?.get("name")?.toString()
+                                ?: user?.email
+                                ?: "User",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -238,26 +240,5 @@ fun HomeScreenCostumer(
                 )
             }
         }
-    }
-}
-
-@Composable
-fun HomeScreenAdmin(
-    modifier: Modifier = Modifier,
-    onLogout: () -> Unit,
-    viewModel: HomeViewModel = viewModel()
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Selamat datang, Admin!",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
     }
 }

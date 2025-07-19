@@ -15,7 +15,7 @@ data class HomeUiState(
     val errorMessage: String? = null
 )
 
-class HomeViewModel : ViewModel() {
+class HomeCostumerViewModel : ViewModel() {
     private val authManager = AuthManager()
 
     private val _uiState = MutableStateFlow(HomeUiState())
