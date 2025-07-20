@@ -50,14 +50,31 @@ fun RahmatMasApp(modifier: Modifier) {
     val navController = rememberNavController()
     val authManager = remember { AuthManager() }
     val context = LocalContext.current
-    val adminAuthManager = AdminAuthManager(context)
+    val adminAuthManager = remember { AdminAuthManager(context) }
 
-    // Collect the authentication state
+
     LaunchedEffect(Unit) {
-        authManager.isUserLoggedIn.collectLatest { isLoggedIn ->
-            if (isLoggedIn) {
+        // Check customer login first
+        authManager.isUserLoggedIn.collectLatest { isCustomerLoggedIn ->
+            if (isCustomerLoggedIn) {
                 navController.navigate("homecostumer") {
                     popUpTo("logincostumer") { inclusive = true }
+                }
+            }
+        }
+    }
+
+    // Check admin login status and session validity on app start
+    LaunchedEffect(Unit) {
+        adminAuthManager.isSessionValid().collect { isValid ->
+            if (isValid) {
+                navController.navigate("homeadmin") {
+                    popUpTo(0) { inclusive = true } // Clear back stack
+                }
+            }else{
+                // If session is not valid, navigate to login admin screen
+                navController.navigate("loginadmin") {
+                    popUpTo(0) { inclusive = true } // Clear back stack
                 }
             }
         }
@@ -96,6 +113,16 @@ fun RahmatMasApp(modifier: Modifier) {
                 factory = LoginViewModelFactory(adminAuthManager)
             )
 
+            // Handle login success
+            LaunchedEffect(Unit) {
+                viewModel.isAdminLoggedIn().collect {
+                    if (it) {
+                        navController.navigate("homeadmin") {
+                            popUpTo("loginadmin") { inclusive = true }
+                        }
+                    }
+                }
+            }
             LoginAdminScreen(
                 viewModel = viewModel,
                 onCostumerClick = {

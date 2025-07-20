@@ -68,6 +68,9 @@ class LoginAdminViewModel(
     // Dapatkan username admin
     fun getAdminUsername() = adminAuthManager.getAdminUsername()
 
+    // Cek apakah sesi masih valid
+    fun isSessionValid() = adminAuthManager.isSessionValid()
+
     // Reset state
     fun resetLoginState() {
         _loginState.value = null

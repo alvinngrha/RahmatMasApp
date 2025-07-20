@@ -195,7 +195,7 @@ fun LoginAdminScreen(
                     color = Color.Black
                 )
                 Text(
-                    text = "Costumer",
+                    text = "Pelanggan",
                     fontSize = 14.sp,
                     color = Color.Blue,
                     fontWeight = FontWeight.Bold,
