@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.login
+package com.example.rahmatmas.ui.admin.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
+import com.example.rahmatmas.data.datastore.AdminAuthManager
 import com.example.rahmatmas.data.supabase.AuthResponse
 
 @Composable
@@ -48,7 +50,11 @@ fun LoginAdminScreen(
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit,
     onCostumerClick: () -> Unit,
-    viewModel: LoginAdminViewModel = viewModel()
+    viewModel: LoginAdminViewModel = viewModel(
+        factory = LoginViewModelFactory(
+            adminAuthManager = AdminAuthManager(LocalContext.current)
+        )
+    )
 ) {
     val username by viewModel.username.collectAsState(initial = "")
     val password by viewModel.password.collectAsState(initial = "")
@@ -69,7 +75,8 @@ fun LoginAdminScreen(
                 }
 
                 is AuthResponse.Error -> {
-                    snackbarMessage = (loginState as AuthResponse.Error).message ?: "Terjadi kesalahan"
+                    snackbarMessage =
+                        (loginState as AuthResponse.Error).message ?: "Terjadi kesalahan"
                     showSnackbar = true
                 }
 
@@ -82,7 +89,11 @@ fun LoginAdminScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
@@ -120,13 +131,13 @@ fun LoginAdminScreen(
                 modifier = Modifier
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(15.dp),
-                maxLines = 1,
+                singleLine = true,
                 placeholder = { Text(text = "Masukkan Username", fontSize = 12.sp) },
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.LightGray,
-                    unfocusedContainerColor = Color.LightGray,
-                    focusedIndicatorColor = Color.LightGray,
-                    unfocusedIndicatorColor = Color.LightGray
+                    focusedContainerColor = Color.Black.copy(alpha = 0.3f),
+                    unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -143,17 +154,16 @@ fun LoginAdminScreen(
                 value = password,
                 onValueChange = { viewModel.updatePassword(it) }, // Update state when text changes
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Transparent),
-                maxLines = 1,
+                    .fillMaxWidth(),
+                singleLine = true,
                 shape = RoundedCornerShape(15.dp),
                 placeholder = { Text(text = "Masukkan Password", fontSize = 12.sp) },
                 visualTransformation = PasswordVisualTransformation(),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.LightGray,
-                    unfocusedContainerColor = Color.LightGray,
-                    focusedIndicatorColor = Color.LightGray,
-                    unfocusedIndicatorColor = Color.LightGray,
+                    focusedContainerColor = Color.Black.copy(alpha = 0.3f),
+                    unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))

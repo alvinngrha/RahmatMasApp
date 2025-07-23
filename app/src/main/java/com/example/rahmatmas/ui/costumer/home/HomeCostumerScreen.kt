@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.home
+package com.example.rahmatmas.ui.costumer.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

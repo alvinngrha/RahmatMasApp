@@ -21,8 +21,11 @@ class AdminDataStore(private val context: Context) {
         private val LOGIN_TIMESTAMP = stringPreferencesKey("login_timestamp")
 
         // Hardcoded credentials untuk admin
-        private const val ADMIN_USERNAME_DEFAULT = "adminrahmatmas"
-        private const val ADMIN_PASSWORD_DEFAULT = "rahmatmas123"
+        private const val ADMIN_USERNAME_DEFAULT = "adminrahmat"
+        private const val ADMIN_PASSWORD_DEFAULT = "rahmat123"
+
+        // Session duration: 24 jam
+        private const val SESSION_DURATION = 24 * 60 * 60 * 1000L
     }
 
     // Simpan status login admin
@@ -30,7 +33,11 @@ class AdminDataStore(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[IS_ADMIN_LOGGED_IN] = isLoggedIn
             preferences[ADMIN_USERNAME] = username
-            preferences[LOGIN_TIMESTAMP] = System.currentTimeMillis().toString()
+            if (isLoggedIn) {
+                preferences[LOGIN_TIMESTAMP] = System.currentTimeMillis().toString()
+            } else {
+                preferences.remove(LOGIN_TIMESTAMP)
+            }
         }
     }
 
@@ -54,7 +61,7 @@ class AdminDataStore(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[IS_ADMIN_LOGGED_IN] = false
             preferences[ADMIN_USERNAME] = ""
-            preferences[LOGIN_TIMESTAMP] = ""
+            preferences.remove(LOGIN_TIMESTAMP) // Hapus timestamp saat logout
         }
     }
 
@@ -63,8 +70,11 @@ class AdminDataStore(private val context: Context) {
         val isLoggedIn = preferences[IS_ADMIN_LOGGED_IN] ?: false
         val timestamp = preferences[LOGIN_TIMESTAMP]?.toLongOrNull() ?: 0L
         val currentTime = System.currentTimeMillis()
-        val sessionDuration = 24 * 60 * 60 * 1000L // 24 jam
 
-        isLoggedIn && (currentTime - timestamp) < sessionDuration
+        // Return true jika:
+        // 1. User sudah login DAN
+        // 2. Timestamp ada (bukan 0) DAN
+        // 3. Waktu sekarang masih dalam batas session duration
+        isLoggedIn && timestamp > 0L && (currentTime - timestamp) < SESSION_DURATION
     }
 }

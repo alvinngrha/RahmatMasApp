@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.login
+package com.example.rahmatmas.ui.admin.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,21 +52,18 @@ class LoginAdminViewModel(
         }
     }
 
-    // Fungsi logout admin
-    fun logoutAdmin() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val result = adminAuthManager.logoutAdmin()
-            _loginState.value = result
-            _isLoading.value = false
-        }
-    }
+//    // Fungsi logout admin
+//    fun logoutAdmin() {
+//        viewModelScope.launch {
+//            _isLoading.value = true
+//            val result = adminAuthManager.logoutAdmin()
+//            _loginState.value = result
+//            _isLoading.value = false
+//        }
+//    }
 
-    // Cek apakah admin sudah login
-    fun isAdminLoggedIn() = adminAuthManager.isAdminLoggedIn()
-
-    // Dapatkan username admin
-    fun getAdminUsername() = adminAuthManager.getAdminUsername()
+//    // Cek apakah admin sudah login
+//    fun isAdminLoggedIn() = adminAuthManager.isAdminLoggedIn()
 
     // Cek apakah sesi masih valid
     fun isSessionValid() = adminAuthManager.isSessionValid()

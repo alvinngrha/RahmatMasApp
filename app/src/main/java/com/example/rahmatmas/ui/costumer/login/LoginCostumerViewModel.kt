@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.login
+package com.example.rahmatmas.ui.costumer.login
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

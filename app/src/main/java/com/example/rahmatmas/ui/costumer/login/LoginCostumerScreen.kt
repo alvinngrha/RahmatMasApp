@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.login
+package com.example.rahmatmas.ui.costumer.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -84,8 +84,8 @@ fun LoginCustomerScreen(
             Text(
                 text = "login saja dengan akun google anda, lalu anda bisa melihat informasi dan membeli " +
                         "emas secara online tanpa harus datang ke lokasi melalui aplikasi RahmatMas.",
-                modifier = Modifier.padding(horizontal = 16.dp),
-                fontSize = 14.sp,
+                modifier = Modifier.padding(horizontal = 8.dp),
+                fontSize = 12.sp,
                 textAlign = TextAlign.Center,
                 color = Color.Black,
                 fontWeight = FontWeight.Normal,
@@ -116,7 +116,6 @@ fun LoginCustomerScreen(
                         .fillMaxWidth(),
                     shape = CircleShape,
                     border = ButtonDefaults.outlinedButtonBorder,
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.5.dp),
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     enabled = !uiState.isLoading
