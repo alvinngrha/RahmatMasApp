@@ -39,6 +39,7 @@ import com.example.rahmatmas.ui.admin.login.LoginViewModelFactory
 import com.example.rahmatmas.ui.admin.navigation.AdminBottomNavItem
 import com.example.rahmatmas.ui.admin.onlinesale.OnlineSaleScreen
 import com.example.rahmatmas.ui.admin.profile.ProfileScreen
+import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
 import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
 import com.example.rahmatmas.ui.costumer.login.LoginCustomerScreen
 import kotlinx.coroutines.flow.first
@@ -130,11 +131,7 @@ fun RahmatMasApp(
                     )
                 }
                 composable("loginadmin") {
-                    val viewModel: LoginAdminViewModel = viewModel(
-                        factory = LoginViewModelFactory(adminAuthManager)
-                    )
                     LoginAdminScreen(
-                        viewModel = viewModel,
                         onCostumerClick = {
                             navController.navigate("logincostumer") {
                                 popUpTo("loginadmin") { inclusive = true }
@@ -159,8 +156,19 @@ fun RahmatMasApp(
                                     inclusive = true
                                 }
                             }
+                        },
+                        onGoToRecording = {
+                            navController.navigate("transactionadmin"){
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = true
+                                }
+                            }
                         }
                     )
+                }
+
+                composable("transactionadmin"){
+                    TransactionRecordingScreen()
                 }
 
                 composable("onlinesaleadmin") {

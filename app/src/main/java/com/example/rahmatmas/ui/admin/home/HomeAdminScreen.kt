@@ -8,22 +8,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,16 +50,25 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.datastore.AdminAuthManager
+import com.example.rahmatmas.data.repository.GoldPriceRepository
 
 @Composable
 fun HomeAdminScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
-    viewModel: HomeAdminViewModel = viewModel()
+    onGoToRecording: () -> Unit
 ) {
     val context = LocalContext.current
     val adminAuthManager = remember { AdminAuthManager(context) }
     val adminUsername by adminAuthManager.getAdminUsername().collectAsState(initial = "")
+
+    val viewModel: HomeAdminViewModel = viewModel(
+        factory = HomeAdminViewModelFactory(
+            adminAuthManager = AdminAuthManager(LocalContext.current),
+            goldPriceRepository = GoldPriceRepository()
+        )
+    )
+    val goldPriceState by viewModel.goldPriceState.collectAsState()
 
     // State untuk dialog logout
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -66,6 +81,7 @@ fun HomeAdminScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
         ) {
             Box(
                 modifier = Modifier
@@ -113,29 +129,64 @@ fun HomeAdminScreen(
                     Box(
                         modifier = Modifier
                             .width(300.dp)
-                            .height(IntrinsicSize.Max)
+                            .fillMaxHeight()
                             .align(Alignment.CenterHorizontally)
                             .background(
                                 color = Color(0xFFFFFFFF).copy(alpha = 0.2f),
                                 shape = RoundedCornerShape(15.dp)
                             ),
                     ) {
-                        Column(
-                            modifier = Modifier
+                        Row(
+                            modifier = modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                text = "Harga Emas Hari Ini",
-                                fontSize = 14.sp,
-                                color = Color.White
-                            )
-                            Text(
-                                text = "1.500.000",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Column(
+                                modifier = modifier
+                            ) {
+                                Text(
+                                    text = "Harga Emas Hari Ini (antam)",
+                                    fontSize = 10.sp,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "Harga Jual: ${goldPriceState.sellPrice}",
+                                    fontSize = 12.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    lineHeight = 8.sp
+                                )
+                                Text(
+                                    text = "Harga Beli: ${goldPriceState.buyPrice}",
+                                    fontSize = 12.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { viewModel.refreshData() },
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .align(Alignment.CenterVertically),
+
+                            ) {
+                                if (goldPriceState.isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(32.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color.White
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Refresh prices",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -164,7 +215,7 @@ fun HomeAdminScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
-                    ){
+                    ) {
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
@@ -172,7 +223,8 @@ fun HomeAdminScreen(
                                 .background(
                                     color = Color(0xFF2563EB).copy(alpha = 0.8f),
                                     shape = RoundedCornerShape(15.dp)
-                                ),
+                                )
+                                .clickable { onGoToRecording() }
                         ) {
                             Column(
                                 modifier = Modifier
@@ -485,7 +537,7 @@ fun HomeAdminScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            viewModel.logoutAdmin(adminAuthManager) {
+                            viewModel.logoutAdmin {
                                 onLogout()
                             }
                             showLogoutDialog = false

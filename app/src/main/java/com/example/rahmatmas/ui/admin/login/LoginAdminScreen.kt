@@ -50,12 +50,12 @@ fun LoginAdminScreen(
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit,
     onCostumerClick: () -> Unit,
-    viewModel: LoginAdminViewModel = viewModel(
+    ) {
+    val viewModel: LoginAdminViewModel = viewModel(
         factory = LoginViewModelFactory(
             adminAuthManager = AdminAuthManager(LocalContext.current)
         )
     )
-) {
     val username by viewModel.username.collectAsState(initial = "")
     val password by viewModel.password.collectAsState(initial = "")
     val loginState by viewModel.loginState.collectAsState(initial = null)

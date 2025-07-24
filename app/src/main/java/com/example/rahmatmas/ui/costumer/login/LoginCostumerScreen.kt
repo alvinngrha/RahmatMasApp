@@ -41,8 +41,8 @@ fun LoginCustomerScreen(
     modifier: Modifier = Modifier,
     onAdminClick: () -> Unit,
     onLoginSuccess: () -> Unit,
-    viewModel: LoginCostumerViewModel = viewModel()
 ) {
+    val viewModel: LoginCostumerViewModel = viewModel()
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 

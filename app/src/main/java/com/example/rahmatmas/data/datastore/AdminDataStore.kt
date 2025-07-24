@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.rahmatmas.BuildConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -19,10 +20,6 @@ class AdminDataStore(private val context: Context) {
         private val IS_ADMIN_LOGGED_IN = booleanPreferencesKey("is_admin_logged_in")
         private val ADMIN_USERNAME = stringPreferencesKey("admin_username")
         private val LOGIN_TIMESTAMP = stringPreferencesKey("login_timestamp")
-
-        // Hardcoded credentials untuk admin
-        private const val ADMIN_USERNAME_DEFAULT = "adminrahmat"
-        private const val ADMIN_PASSWORD_DEFAULT = "rahmat123"
 
         // Session duration: 24 jam
         private const val SESSION_DURATION = 24 * 60 * 60 * 1000L
@@ -53,7 +50,7 @@ class AdminDataStore(private val context: Context) {
 
     // Fungsi untuk validasi login admin
     fun validateAdminCredentials(username: String, password: String): Boolean {
-        return username == ADMIN_USERNAME_DEFAULT && password == ADMIN_PASSWORD_DEFAULT
+        return username == BuildConfig.ADMIN_USERNAME && password == BuildConfig.ADMIN_PASSWORD
     }
 
     // Logout admin
