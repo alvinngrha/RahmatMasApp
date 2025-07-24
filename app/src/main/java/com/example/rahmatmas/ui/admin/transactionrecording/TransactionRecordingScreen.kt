@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +45,11 @@ fun TransactionRecordingScreen(
     var expanded by remember { mutableStateOf(false) }
     val optionsMenuKadar = listOf("700", "833", "999")
     var selectedKadar by remember { mutableStateOf("") }
+
+    val namaBarang = remember { mutableStateOf("") }
+    val beratEmas = remember { mutableStateOf(0) }
+    val ongkos = remember { mutableStateOf(0) }
+    val hargaEmas = remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -268,7 +274,7 @@ fun TransactionRecordingScreen(
                         Text(
                             text = "Rp. 0",
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFB300)
                         )
                     }
@@ -278,7 +284,8 @@ fun TransactionRecordingScreen(
                 Button(
                     onClick = {},
                     modifier = modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .shadow(16.dp),
                     shape = RoundedCornerShape(15.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB300),
@@ -291,6 +298,29 @@ fun TransactionRecordingScreen(
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
                         color = Color.White,
+                        modifier = modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = modifier.height(8.dp))
+
+                Button(
+                    onClick = {},
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(15.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF3F4F6).copy(alpha = 0.5f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Hitung Total",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center,
+                        color = Color.Black,
                         modifier = modifier
                             .padding(16.dp)
                             .fillMaxWidth()
