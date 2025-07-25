@@ -25,6 +25,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,20 +37,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionRecordingScreen(
     modifier: Modifier = Modifier
 ) {
+
+    val viewModel: TransactionRecordingViewModel = viewModel()
+    val transactionUiState by viewModel.transactionUiState.collectAsState()
     var expanded by remember { mutableStateOf(false) }
     val optionsMenuKadar = listOf("700", "833", "999")
-    var selectedKadar by remember { mutableStateOf("") }
-
-    val namaBarang = remember { mutableStateOf("") }
-    val beratEmas = remember { mutableStateOf(0) }
-    val ongkos = remember { mutableStateOf(0) }
-    val hargaEmas = remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -88,8 +87,8 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    value = transactionUiState.namaBarang,
+                    onValueChange = { viewModel.updateNamaBarang(it) },
                     placeholder = { Text(text = "Masukkan Nama Barang", fontSize = 12.sp) },
                     singleLine = true,
                     modifier = modifier
@@ -130,7 +129,7 @@ fun TransactionRecordingScreen(
                 ) {
                     TextField(
                         readOnly = true,
-                        value = selectedKadar,
+                        value = transactionUiState.kadarEmas,
                         onValueChange = {},
                         placeholder = { Text("Pilih Kadar Emas", fontSize = 12.sp) },
                         modifier = modifier
@@ -157,7 +156,7 @@ fun TransactionRecordingScreen(
                             DropdownMenuItem(
                                 text = { Text(option) },
                                 onClick = {
-                                    selectedKadar = option
+                                    viewModel.updateKadarEmas(option)
                                     expanded = false
                                 },
                             )
@@ -174,8 +173,8 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    value = transactionUiState.beratEmas,
+                    onValueChange = { viewModel.updateBeratEmas(it) },
                     placeholder = { Text(text = "Masukkan Berat Emas", fontSize = 12.sp) },
                     singleLine = true,
                     modifier = modifier
@@ -202,8 +201,8 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    value = transactionUiState.ongkos.toString(),
+                    onValueChange = { viewModel.updateOngkos(it.toIntOrNull() ?: 0) },
                     singleLine = true,
                     modifier = modifier
                         .fillMaxWidth()
@@ -229,8 +228,8 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    value = transactionUiState.hargaDasarPerGram.toString(),
+                    onValueChange = { viewModel.updateHargaDasarPerGram(it.toIntOrNull() ?: 0) },
                     singleLine = true,
                     modifier = modifier
                         .fillMaxWidth()
@@ -272,7 +271,7 @@ fun TransactionRecordingScreen(
                         Spacer(modifier = modifier.height(8.dp))
 
                         Text(
-                            text = "Rp. 0",
+                            text = viewModel.formatCurrency(transactionUiState.totalHarga),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFB300)
@@ -282,7 +281,7 @@ fun TransactionRecordingScreen(
                 Spacer(modifier = modifier.height(16.dp))
 
                 Button(
-                    onClick = {},
+                    onClick = { },
                     modifier = modifier
                         .fillMaxWidth()
                         .shadow(16.dp),
@@ -305,27 +304,27 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(8.dp))
 
-                Button(
-                    onClick = {},
-                    modifier = modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(15.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF3F4F6).copy(alpha = 0.5f),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = "Hitung Total",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        color = Color.Black,
-                        modifier = modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    )
-                }
+//                Button(
+//                    onClick = { viewModel.hitungTotal() },
+//                    modifier = modifier
+//                        .fillMaxWidth(),
+//                    shape = RoundedCornerShape(15.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color(0xFFF3F4F6).copy(alpha = 0.5f),
+//                        contentColor = Color.White
+//                    )
+//                ) {
+//                    Text(
+//                        text = "Hitung Total",
+//                        fontSize = 14.sp,
+//                        fontWeight = FontWeight.SemiBold,
+//                        textAlign = TextAlign.Center,
+//                        color = Color.Black,
+//                        modifier = modifier
+//                            .padding(16.dp)
+//                            .fillMaxWidth()
+//                    )
+//                }
             }
         }
     }
