@@ -2,7 +2,7 @@ package com.example.rahmatmas.ui.costumer.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rahmatmas.data.supabase.AuthManager
+import com.example.rahmatmas.data.supabase.authgoogle.AuthManager
 import io.github.jan.supabase.auth.user.UserInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

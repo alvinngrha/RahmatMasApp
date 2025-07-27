@@ -31,7 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.rahmatmas.data.datastore.AdminAuthManager
-import com.example.rahmatmas.data.supabase.AuthManager
+import com.example.rahmatmas.data.supabase.authgoogle.AuthManager
 import com.example.rahmatmas.ui.admin.home.HomeAdminScreen
 import com.example.rahmatmas.ui.admin.login.LoginAdminScreen
 import com.example.rahmatmas.ui.admin.login.LoginAdminViewModel
@@ -39,6 +39,7 @@ import com.example.rahmatmas.ui.admin.login.LoginViewModelFactory
 import com.example.rahmatmas.ui.admin.navigation.AdminBottomNavItem
 import com.example.rahmatmas.ui.admin.onlinesale.OnlineSaleScreen
 import com.example.rahmatmas.ui.admin.profile.ProfileScreen
+import com.example.rahmatmas.ui.admin.transactionhistory.TransactionHistoryScreen
 import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
 import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
 import com.example.rahmatmas.ui.costumer.login.LoginCustomerScreen
@@ -163,12 +164,26 @@ fun RahmatMasApp(
                                     inclusive = true
                                 }
                             }
+                        },
+                        onGoToTransactionHistory = {
+                            navController.navigate("transactionhistory") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = true
+                                }
+                            }
                         }
                     )
                 }
 
                 composable("transactionadmin"){
-                    TransactionRecordingScreen()
+                    TransactionRecordingScreen(
+                        onOpenCameraClick = {},
+                        onOpenGalleryClick = {},
+                    )
+                }
+
+                composable("transactionhistory"){
+                    TransactionHistoryScreen()
                 }
 
                 composable("onlinesaleadmin") {

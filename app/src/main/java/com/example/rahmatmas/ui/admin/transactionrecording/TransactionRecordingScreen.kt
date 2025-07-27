@@ -1,14 +1,21 @@
 package com.example.rahmatmas.ui.admin.transactionrecording
 
+import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,28 +34,34 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rahmatmas.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionRecordingScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenCameraClick: () -> Unit,
+    onOpenGalleryClick: () -> Unit,
 ) {
 
     val viewModel: TransactionRecordingViewModel = viewModel()
     val transactionUiState by viewModel.transactionUiState.collectAsState()
-    var expanded by remember { mutableStateOf(false) }
+//    var expanded by rememberSaveable { mutableStateOf(false) }
     val optionsMenuKadar = listOf("700", "833", "999")
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -75,9 +88,88 @@ fun TransactionRecordingScreen(
             Column(
                 modifier = modifier
                     .padding(start = 16.dp, end = 24.dp, top = 16.dp, bottom = 16.dp)
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
+
+                Image(
+                    painter = painterResource(id = R.drawable.baseline_insert_photo),
+                    contentDescription = "Insert Photo",
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .border(
+                            width = 1.dp,
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(15.dp)
+                        ),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = modifier.height(16.dp))
+
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.baseline_insert_photo),
+                        contentDescription = "Gallery Icon",
+                        modifier = modifier
+                            .size(40.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Gray.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable { onOpenGalleryClick() },
+                    )
+                    Spacer(modifier = modifier.width(16.dp))
+
+                    Image(
+                        painter = painterResource(id = R.drawable.outline_camera),
+                        contentDescription = "Gallery Icon",
+                        modifier = modifier
+                            .size(40.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Gray.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable { onOpenCameraClick() }
+                    )
+                }
+                Spacer(modifier = modifier.height(24.dp))
+
+                Text(
+                    text = "ID Transaksi",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+
+                TextField(
+                    value = transactionUiState.idTransaksi,
+                    onValueChange = { viewModel.updateIdTransaksi(it) },
+                    placeholder = { Text(text = "Masukkan Id Transaksi", fontSize = 12.sp) },
+                    singleLine = true,
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(15.dp)
+                        ),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
+                    )
+                )
+                Spacer(modifier = modifier.height(16.dp))
 
                 Text(
                     text = "Nama Barang",
@@ -115,7 +207,8 @@ fun TransactionRecordingScreen(
                 )
 
                 ExposedDropdownMenuBox(
-                    expanded = expanded,
+                    expanded = transactionUiState.isKadarEmasExpanded,
+                    onExpandedChange = { newState -> viewModel.updateKadarEmasExpanded(newState) },
                     modifier = modifier
                         .fillMaxWidth()
                         .border(
@@ -123,9 +216,6 @@ fun TransactionRecordingScreen(
                             color = Color.Gray.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(15.dp)
                         ),
-                    onExpandedChange = {
-                        expanded = !expanded
-                    }
                 ) {
                     TextField(
                         readOnly = true,
@@ -136,7 +226,7 @@ fun TransactionRecordingScreen(
                             .menuAnchor()
                             .fillMaxWidth(),
                         trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = transactionUiState.isKadarEmasExpanded)
                         },
                         colors = ExposedDropdownMenuDefaults.textFieldColors(
                             focusedIndicatorColor = Color.Transparent,
@@ -147,8 +237,8 @@ fun TransactionRecordingScreen(
                     )
 
                     ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
+                        expanded = transactionUiState.isKadarEmasExpanded,
+                        onDismissRequest = { viewModel.updateKadarEmasExpanded(false) },
                         modifier = modifier
                             .background(Color.White)
                     ) {
@@ -157,7 +247,7 @@ fun TransactionRecordingScreen(
                                 text = { Text(option) },
                                 onClick = {
                                     viewModel.updateKadarEmas(option)
-                                    expanded = false
+                                    viewModel.updateKadarEmasExpanded(false)
                                 },
                             )
                         }
@@ -191,6 +281,15 @@ fun TransactionRecordingScreen(
                         unfocusedContainerColor = Color.Transparent
                     )
                 )
+
+                if (transactionUiState.beratError != null) {
+                    Text(
+                        text = transactionUiState.beratError ?: "",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = modifier.padding(top = 4.dp)
+                    )
+                }
                 Spacer(modifier = modifier.height(16.dp))
 
                 Text(
@@ -201,8 +300,8 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = transactionUiState.ongkos.toString(),
-                    onValueChange = { viewModel.updateOngkos(it.toIntOrNull() ?: 0) },
+                    value = transactionUiState.ongkos,
+                    onValueChange = { viewModel.updateOngkos(it) },
                     singleLine = true,
                     modifier = modifier
                         .fillMaxWidth()
@@ -218,6 +317,15 @@ fun TransactionRecordingScreen(
                         unfocusedContainerColor = Color.Transparent
                     )
                 )
+
+                if (transactionUiState.ongkosError != null) {
+                    Text(
+                        text = transactionUiState.ongkosError ?: "",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = modifier.padding(top = 4.dp)
+                    )
+                }
                 Spacer(modifier = modifier.height(16.dp))
 
                 Text(
@@ -228,8 +336,8 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = transactionUiState.hargaDasarPerGram.toString(),
-                    onValueChange = { viewModel.updateHargaDasarPerGram(it.toIntOrNull() ?: 0) },
+                    value = transactionUiState.hargaDasarPerGram,
+                    onValueChange = { viewModel.updateHargaDasarPerGram(it) },
                     singleLine = true,
                     modifier = modifier
                         .fillMaxWidth()
@@ -245,6 +353,15 @@ fun TransactionRecordingScreen(
                         unfocusedContainerColor = Color.Transparent
                     )
                 )
+
+                if (transactionUiState.hargaDasarError != null) {
+                    Text(
+                        text = transactionUiState.hargaDasarError ?: "",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = modifier.padding(top = 4.dp)
+                    )
+                }
                 Spacer(modifier = modifier.height(16.dp))
 
                 Box(
@@ -256,7 +373,7 @@ fun TransactionRecordingScreen(
                             color = Color.Gray.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(15.dp)
                         ),
-                ){
+                ) {
                     Column(
                         modifier = modifier
                             .fillMaxWidth()
@@ -281,10 +398,26 @@ fun TransactionRecordingScreen(
                 Spacer(modifier = modifier.height(16.dp))
 
                 Button(
-                    onClick = { },
+                    onClick = { //jika field ada yang kosong, tampilkan snackbar
+                        if (transactionUiState.idTransaksi.isEmpty() ||
+                            transactionUiState.namaBarang.isEmpty() ||
+                            transactionUiState.kadarEmas.isEmpty() ||
+                            transactionUiState.beratEmas.isEmpty() ||
+                            transactionUiState.ongkos.isEmpty() ||
+                            transactionUiState.hargaDasarPerGram.isEmpty()
+                        ) {
+                            Toast.makeText(
+                                context,
+                                "Mohon lengkapi semua field sebelum menyimpan transaksi.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            viewModel.simpanTransaksi()
+                        }
+                    },
                     modifier = modifier
                         .fillMaxWidth()
-                        .shadow(16.dp),
+                        .shadow(24.dp),
                     shape = RoundedCornerShape(15.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB300),
@@ -302,29 +435,6 @@ fun TransactionRecordingScreen(
                             .fillMaxWidth()
                     )
                 }
-                Spacer(modifier = modifier.height(8.dp))
-
-//                Button(
-//                    onClick = { viewModel.hitungTotal() },
-//                    modifier = modifier
-//                        .fillMaxWidth(),
-//                    shape = RoundedCornerShape(15.dp),
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = Color(0xFFF3F4F6).copy(alpha = 0.5f),
-//                        contentColor = Color.White
-//                    )
-//                ) {
-//                    Text(
-//                        text = "Hitung Total",
-//                        fontSize = 14.sp,
-//                        fontWeight = FontWeight.SemiBold,
-//                        textAlign = TextAlign.Center,
-//                        color = Color.Black,
-//                        modifier = modifier
-//                            .padding(16.dp)
-//                            .fillMaxWidth()
-//                    )
-//                }
             }
         }
     }

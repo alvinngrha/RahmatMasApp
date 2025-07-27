@@ -41,15 +41,14 @@ class HomeAdminViewModel(
                     }
 
                     is AuthResponse.Error -> {
-                        // Handle error jika diperlukan
-                        // Untuk saat ini, kita tetap panggil onSuccess karena user harus bisa logout
                         onSuccess()
                     }
                     else -> {}
                 }
             } catch (e: Exception) {
-                // Handle exception, tetapi tetap logout
-                onSuccess()
+                // Handle any exceptions that occur during logout
+                e.printStackTrace()
+                onSuccess() // Call onSuccess even if there's an error to allow UI to update
             }
         }
     }

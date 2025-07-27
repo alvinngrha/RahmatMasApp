@@ -56,7 +56,8 @@ import com.example.rahmatmas.data.repository.GoldPriceRepository
 fun HomeAdminScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
-    onGoToRecording: () -> Unit
+    onGoToRecording: () -> Unit,
+    onGoToTransactionHistory: () -> Unit,
 ) {
     val context = LocalContext.current
     val adminAuthManager = remember { AdminAuthManager(context) }
@@ -266,7 +267,8 @@ fun HomeAdminScreen(
                                 .background(
                                     color = Color(0xFF10B981).copy(alpha = 0.8f),
                                     shape = RoundedCornerShape(15.dp)
-                                ),
+                                )
+                                .clickable { onGoToTransactionHistory() },
                         ) {
                             Column(
                                 modifier = Modifier

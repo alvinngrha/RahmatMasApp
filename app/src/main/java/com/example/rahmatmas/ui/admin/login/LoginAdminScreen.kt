@@ -100,7 +100,7 @@ fun LoginAdminScreen(
                 .fillMaxSize()
         ) {
             Image(
-                painter = painterResource(id = R.drawable.logo),
+                painter = painterResource(id = R.drawable.logo_rb),
                 contentDescription = "Admin Image",
                 modifier = Modifier
                     .size(200.dp, 200.dp)
