@@ -172,10 +172,7 @@ fun RahmatMasApp(
                 }
 
                 composable("transactionadmin"){
-                    TransactionRecordingScreen(
-                        onOpenCameraClick = {},
-                        onOpenGalleryClick = {},
-                    )
+                    TransactionRecordingScreen()
                 }
 
                 composable("transactionhistory"){

@@ -14,11 +14,13 @@ data class TransactionUiState(
     val namaBarang: String = "",
     val jumlahBarang: String = "",
     val kadarEmas: String = "",
+    val jenisTransaksi: String = "",
     val beratEmas: String = "",
     val ongkos: String = "",
     val hargaDasarPerGram: String = "",
     val totalHarga: Double = 0.0,
     val isKadarEmasExpanded: Boolean = false,
+    val isJenisTransaksiExpanded: Boolean = false,
     val snackbarMessage: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -56,6 +58,13 @@ class TransactionRecordingViewModel : ViewModel() {
         if (jumlah.all { it.isDigit() } || jumlah.isEmpty()) {
             _transactionUiState.value =
                 _transactionUiState.value.copy(jumlahBarang = jumlah, jumlahBarangError = null)
+
+            // Hitung ulang total harga jika berat emas sudah diisi
+            if (_transactionUiState.value.jumlahBarang.isNotEmpty()) {
+                calculateTotalHarga()
+            } else {
+                _transactionUiState.value = _transactionUiState.value.copy(totalHarga = 0.0)
+            }
         } else {
             // Tampilkan pesan error jika jumlah barang tidak valid
             _transactionUiState.value = _transactionUiState.value.copy(
@@ -69,6 +78,19 @@ class TransactionRecordingViewModel : ViewModel() {
     fun updateKadarEmas(kadar: String) {
             _transactionUiState.value = _transactionUiState.value.copy(kadarEmas = kadar)
         }
+
+    fun updateKadarEmasExpanded(isExpanded: Boolean) {
+        _transactionUiState.value = _transactionUiState.value.copy(isKadarEmasExpanded = isExpanded)
+    }
+
+    // Update jenis transaksi
+    fun updateJenisTransaksi(jenis: String) {
+        _transactionUiState.value = _transactionUiState.value.copy(jenisTransaksi = jenis)
+    }
+
+    fun updateJenisTransaksiExpanded(isExpanded: Boolean) {
+        _transactionUiState.value = _transactionUiState.value.copy(isJenisTransaksiExpanded = isExpanded)
+    }
 
     // Update berat emas
     fun updateBeratEmas(beratEmas: String) {
@@ -118,9 +140,6 @@ class TransactionRecordingViewModel : ViewModel() {
         }
     }
 
-    fun updateKadarEmasExpanded(isExpanded: Boolean) {
-        _transactionUiState.value = _transactionUiState.value.copy(isKadarEmasExpanded = isExpanded)
-    }
 
     // Hitung total harga
     private fun calculateTotalHarga() {
@@ -130,7 +149,7 @@ class TransactionRecordingViewModel : ViewModel() {
 
 
         // Hitung total harga
-        val totalHarga = hargaDasar * beratEmas * jumlahBarangDiBeli
+        val totalHarga = (hargaDasar * beratEmas) * jumlahBarangDiBeli
 
         _transactionUiState.value = _transactionUiState.value.copy(totalHarga = totalHarga)
     }

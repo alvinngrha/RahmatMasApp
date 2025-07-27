@@ -60,9 +60,7 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionRecordingScreen(
-    modifier: Modifier = Modifier,
-    onOpenCameraClick: () -> Unit,
-    onOpenGalleryClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val viewModel: TransactionRecordingViewModel = viewModel()
     val transactionUiState by viewModel.transactionUiState.collectAsState()
@@ -72,6 +70,11 @@ fun TransactionRecordingScreen(
         "700",
         "833",
         "999"
+    )
+
+    val optionsJenisTransaksi = listOf(
+        "Jual",
+        "Beli"
     )
 
 
@@ -381,6 +384,62 @@ fun TransactionRecordingScreen(
                                 onClick = {
                                     viewModel.updateKadarEmas(option)
                                     viewModel.updateKadarEmasExpanded(false)
+                                },
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = modifier.height(16.dp))
+
+                Text(
+                    text = "Jenis Transaksi",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = transactionUiState.isJenisTransaksiExpanded,
+                    onExpandedChange = { newState -> viewModel.updateJenisTransaksiExpanded(newState) },
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(15.dp)
+                        ),
+                ) {
+                    TextField(
+                        readOnly = true,
+                        value = transactionUiState.jenisTransaksi,
+                        onValueChange = {},
+                        placeholder = { Text("Pilih Kadar Emas", fontSize = 12.sp) },
+                        modifier = modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = transactionUiState.isJenisTransaksiExpanded)
+                        },
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        )
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = transactionUiState.isJenisTransaksiExpanded,
+                        onDismissRequest = { viewModel.updateJenisTransaksiExpanded(false) },
+                        modifier = modifier
+                            .background(Color.White)
+                    ) {
+                        optionsJenisTransaksi.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    viewModel.updateJenisTransaksi(option)
+                                    viewModel.updateJenisTransaksiExpanded(false)
                                 },
                             )
                         }
