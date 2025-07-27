@@ -1,6 +1,11 @@
 package com.example.rahmatmas.ui.admin.transactionrecording
 
+import android.Manifest
+import android.net.Uri
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -45,8 +51,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.rahmatmas.R
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,13 +64,83 @@ fun TransactionRecordingScreen(
     onOpenCameraClick: () -> Unit,
     onOpenGalleryClick: () -> Unit,
 ) {
-
     val viewModel: TransactionRecordingViewModel = viewModel()
     val transactionUiState by viewModel.transactionUiState.collectAsState()
-//    var expanded by rememberSaveable { mutableStateOf(false) }
-    val optionsMenuKadar = listOf("700", "833", "999")
-
     val context = LocalContext.current
+
+    val optionsMenuKadar = listOf(
+        "700",
+        "833",
+        "999"
+    )
+
+
+    // State untuk menyimpan URI foto kamera
+    val cameraImageUri = remember { androidx.compose.runtime.mutableStateOf<Uri?>(null) }
+
+    // Launcher untuk mengambil foto dari galeri
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.setPhotoUri(uri)
+        }
+    }
+
+    // Launcher untuk mengambil foto dari kamera
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            viewModel.setPhotoUri(cameraImageUri.value)
+        }
+    }
+
+    // Permission launcher (untuk kamera)
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // Mulai kamera jika permission diberikan
+            val photoFile = File.createTempFile(
+                "IMG_",
+                ".jpg",
+                context.cacheDir
+            )
+            val uri = FileProvider.getUriForFile(
+                context,
+                context.packageName + ".provider",
+                photoFile
+            )
+            cameraImageUri.value = uri
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    // Handler klik galeri
+    fun handleOpenGallery() {
+        galleryLauncher.launch("image/*")
+    }
+
+    // Handler klik kamera
+    fun handleOpenCamera() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        } else {
+            val photoFile = File.createTempFile(
+                "IMG_",
+                ".jpg",
+                context.cacheDir
+            )
+            val uri = FileProvider.getUriForFile(
+                context,
+                context.packageName + ".provider",
+                photoFile
+            )
+            cameraImageUri.value = uri
+            cameraLauncher.launch(uri)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -92,19 +171,36 @@ fun TransactionRecordingScreen(
                     .verticalScroll(rememberScrollState())
             ) {
 
-                Image(
-                    painter = painterResource(id = R.drawable.baseline_insert_photo),
-                    contentDescription = "Insert Photo",
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color.Gray.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(15.dp)
-                        ),
-                    contentScale = ContentScale.Crop
-                )
+                // Tampilkan foto jika ada, jika tidak tampilkan placeholder
+                if (transactionUiState.photoUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(transactionUiState.photoUri),
+                        contentDescription = "Selected Photo",
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Gray.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(15.dp)
+                            ),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.baseline_insert_photo),
+                        contentDescription = "Insert Photo",
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Gray.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(15.dp)
+                            ),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Spacer(modifier = modifier.height(16.dp))
 
                 Row(
@@ -124,13 +220,13 @@ fun TransactionRecordingScreen(
                                 color = Color.Gray.copy(alpha = 0.5f),
                                 shape = RoundedCornerShape(8.dp)
                             )
-                            .clickable { onOpenGalleryClick() },
+                            .clickable { handleOpenGallery() },
                     )
                     Spacer(modifier = modifier.width(16.dp))
 
                     Image(
                         painter = painterResource(id = R.drawable.outline_camera),
-                        contentDescription = "Gallery Icon",
+                        contentDescription = "Camera Icon",
                         modifier = modifier
                             .size(40.dp)
                             .border(
@@ -138,7 +234,7 @@ fun TransactionRecordingScreen(
                                 color = Color.Gray.copy(alpha = 0.5f),
                                 shape = RoundedCornerShape(8.dp)
                             )
-                            .clickable { onOpenCameraClick() }
+                            .clickable { handleOpenCamera() }
                     )
                 }
                 Spacer(modifier = modifier.height(24.dp))
@@ -197,6 +293,43 @@ fun TransactionRecordingScreen(
                         unfocusedContainerColor = Color.Transparent
                     )
                 )
+                Spacer(modifier = modifier.height(16.dp))
+
+                Text(
+                    text = "Jumlah Barang",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+
+                TextField(
+                    value = transactionUiState.jumlahBarang,
+                    onValueChange = { viewModel.updateJumlahBarang(it) },
+                    placeholder = { Text(text = "Masukkan Jumlah Barang", fontSize = 12.sp) },
+                    singleLine = true,
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(15.dp)
+                        ),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
+                    )
+                )
+
+                if (transactionUiState.jumlahBarangError != null) {
+                    Text(
+                        text = transactionUiState.jumlahBarangError ?: "",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = modifier.padding(top = 4.dp)
+                    )
+                }
                 Spacer(modifier = modifier.height(16.dp))
 
                 Text(
@@ -302,6 +435,7 @@ fun TransactionRecordingScreen(
                 TextField(
                     value = transactionUiState.ongkos,
                     onValueChange = { viewModel.updateOngkos(it) },
+                    placeholder = { Text(text = "Masukkan Ongkos", fontSize = 12.sp) },
                     singleLine = true,
                     modifier = modifier
                         .fillMaxWidth()
@@ -338,6 +472,12 @@ fun TransactionRecordingScreen(
                 TextField(
                     value = transactionUiState.hargaDasarPerGram,
                     onValueChange = { viewModel.updateHargaDasarPerGram(it) },
+                    placeholder = {
+                        Text(
+                            text = "Masukkan Harga Dasar Emas per Gram",
+                            fontSize = 12.sp
+                        )
+                    },
                     singleLine = true,
                     modifier = modifier
                         .fillMaxWidth()

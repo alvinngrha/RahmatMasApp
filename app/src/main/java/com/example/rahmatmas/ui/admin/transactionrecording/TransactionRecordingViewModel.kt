@@ -1,5 +1,7 @@
 package com.example.rahmatmas.ui.admin.transactionrecording
 
+
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,6 +12,7 @@ import java.util.Locale
 data class TransactionUiState(
     val idTransaksi: String = "",
     val namaBarang: String = "",
+    val jumlahBarang: String = "",
     val kadarEmas: String = "",
     val beratEmas: String = "",
     val ongkos: String = "",
@@ -22,6 +25,8 @@ data class TransactionUiState(
     val beratError: String? = null,
     val hargaDasarError: String? = null,
     val ongkosError: String? = null,
+    val jumlahBarangError: String? = null,
+    val photoUri: Uri? = null // Tambahkan ini untuk menyimpan URI foto
 )
 
 class TransactionRecordingViewModel : ViewModel() {
@@ -36,14 +41,34 @@ class TransactionRecordingViewModel : ViewModel() {
 
     // Update nama barang
     fun updateNamaBarang(nama: String) {
-        _transactionUiState.value = _transactionUiState.value.copy(namaBarang = nama)
+            if (nama.isNotEmpty()) {
+                _transactionUiState.value = _transactionUiState.value.copy(namaBarang = nama, error = null)
+            } else {
+                // Tampilkan pesan error jika nama barang kosong
+                _transactionUiState.value = _transactionUiState.value.copy(
+                    namaBarang = nama,
+                    error = "Nama barang tidak boleh kosong"
+                )
+            }
+        }
+
+    fun updateJumlahBarang(jumlah: String) {
+        if (jumlah.all { it.isDigit() } || jumlah.isEmpty()) {
+            _transactionUiState.value =
+                _transactionUiState.value.copy(jumlahBarang = jumlah, jumlahBarangError = null)
+        } else {
+            // Tampilkan pesan error jika jumlah barang tidak valid
+            _transactionUiState.value = _transactionUiState.value.copy(
+                jumlahBarang = jumlah,
+                jumlahBarangError = "Jumlah barang harus berupa angka"
+            )
+        }
     }
 
     // Update kadar emas
     fun updateKadarEmas(kadar: String) {
-        _transactionUiState.value = _transactionUiState.value.copy(kadarEmas = kadar)
-        calculateTotalHarga()
-    }
+            _transactionUiState.value = _transactionUiState.value.copy(kadarEmas = kadar)
+        }
 
     // Update berat emas
     fun updateBeratEmas(beratEmas: String) {
@@ -101,10 +126,11 @@ class TransactionRecordingViewModel : ViewModel() {
     private fun calculateTotalHarga() {
         val hargaDasar = _transactionUiState.value.hargaDasarPerGram.toIntOrNull() ?: 0
         val beratEmas = _transactionUiState.value.beratEmas.toDoubleOrNull() ?: 0.0
+        val jumlahBarangDiBeli = _transactionUiState.value.jumlahBarang.toIntOrNull() ?: 1
 
 
         // Hitung total harga
-        val totalHarga = hargaDasar * beratEmas
+        val totalHarga = hargaDasar * beratEmas * jumlahBarangDiBeli
 
         _transactionUiState.value = _transactionUiState.value.copy(totalHarga = totalHarga)
     }
@@ -129,6 +155,11 @@ class TransactionRecordingViewModel : ViewModel() {
     fun formatCurrency(amount: Double): String {
         val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
         return formatter.format(amount).replace("Rp", "Rp ")
+    }
+
+    // Update photo dari galeri/kamera
+    fun setPhotoUri(uri: Uri?) {
+        _transactionUiState.value = _transactionUiState.value.copy(photoUri = uri)
     }
 
 //    // Clear form

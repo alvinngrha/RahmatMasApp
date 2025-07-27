@@ -159,17 +159,13 @@ fun RahmatMasApp(
                             }
                         },
                         onGoToRecording = {
-                            navController.navigate("transactionadmin"){
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    inclusive = true
-                                }
+                            navController.navigate("transactionadmin") {
+                                launchSingleTop = true
                             }
                         },
                         onGoToTransactionHistory = {
                             navController.navigate("transactionhistory") {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    inclusive = true
-                                }
+                                launchSingleTop = true
                             }
                         }
                     )
