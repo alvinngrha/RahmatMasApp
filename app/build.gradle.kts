@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.0.0"
+    id("kotlin-kapt")
+    id("kotlinx-serialization")
 }
 
 android {
@@ -96,6 +98,10 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.github.jan-tennert.supabase:auth-kt")
     implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.0.4")
+
+    // Serialization untuk Supabase
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     //ktor
     implementation("io.ktor:ktor-client-okhttp:3.0.3")
@@ -112,5 +118,16 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Room Database
+    implementation("androidx.room:room-runtime:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
+    kapt("androidx.room:room-compiler:2.7.2")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+
+    // Network connectivity monitoring
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
 }

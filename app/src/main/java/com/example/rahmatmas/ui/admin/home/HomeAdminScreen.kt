@@ -5,10 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -129,8 +127,8 @@ fun HomeAdminScreen(
 
                     Box(
                         modifier = Modifier
-                            .width(300.dp)
-                            .fillMaxHeight()
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
                             .align(Alignment.CenterHorizontally)
                             .background(
                                 color = Color(0xFFFFFFFF).copy(alpha = 0.2f),
@@ -197,7 +195,6 @@ fun HomeAdminScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(IntrinsicSize.Max)
                     .padding(horizontal = 24.dp)
                     .align(Alignment.CenterHorizontally)
                     .shadow(24.dp)
@@ -213,7 +210,8 @@ fun HomeAdminScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -229,8 +227,8 @@ fun HomeAdminScreen(
                         ) {
                             Column(
                                 modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxSize(),
+                                    .fillMaxSize()
+                                    .padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
@@ -250,11 +248,11 @@ fun HomeAdminScreen(
 
                                 Text(
                                     text = "Pencatatan Transaksi",
-                                    fontSize = 6.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     color = Color.White,
-                                    lineHeight = 8.sp
+                                    lineHeight = 10.sp
                                 )
                             }
                         }
@@ -293,11 +291,11 @@ fun HomeAdminScreen(
 
                                 Text(
                                     text = "Riwayat Transaksi",
-                                    fontSize = 6.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     color = Color.White,
-                                    lineHeight = 8.sp
+                                    lineHeight = 10.sp
                                 )
                             }
                         }
@@ -336,11 +334,11 @@ fun HomeAdminScreen(
 
                                 Text(
                                     text = "Stok Barang",
-                                    fontSize = 6.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     color = Color.White,
-                                    lineHeight = 8.sp
+                                    lineHeight = 10.sp
                                 )
                             }
                         }
@@ -385,11 +383,11 @@ fun HomeAdminScreen(
 
                                 Text(
                                     text = "Penjualan Online",
-                                    fontSize = 6.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     color = Color.White,
-                                    lineHeight = 8.sp
+                                    lineHeight = 10.sp
                                 )
                             }
                         }
@@ -428,11 +426,11 @@ fun HomeAdminScreen(
 
                                 Text(
                                     text = "Laporan Keuangan",
-                                    fontSize = 6.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     color = Color.White,
-                                    lineHeight = 8.sp
+                                    lineHeight = 10.sp
                                 )
                             }
                         }
