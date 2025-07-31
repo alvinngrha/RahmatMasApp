@@ -97,8 +97,8 @@ class HomeAdminViewModel(
                 }
             } catch (e: Exception) {
                 _goldPriceState.value = GoldPriceUiState(
-                    buyPrice = "Error",
-                    sellPrice = "Error",
+                    buyPrice = "Tidak ada internet",
+                    sellPrice = "Tidak ada internet",
                     isLoading = false,
                     error = e.message ?: "Terjadi kesalahan"
                 )

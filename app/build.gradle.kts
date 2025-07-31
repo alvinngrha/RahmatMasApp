@@ -61,6 +61,13 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Untuk Room
+    kapt {
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+    }
 }
 
 dependencies {
@@ -73,6 +80,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -127,7 +135,7 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 
-    // Network connectivity monitoring
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    // Network monitoring
+    implementation ("androidx.lifecycle:lifecycle-process:2.9.2")
 
 }

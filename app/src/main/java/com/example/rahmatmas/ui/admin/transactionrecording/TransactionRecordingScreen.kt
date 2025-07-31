@@ -3,13 +3,11 @@ package com.example.rahmatmas.ui.admin.transactionrecording
 import android.Manifest
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,21 +22,31 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,9 +70,11 @@ import java.io.File
 fun TransactionRecordingScreen(
     modifier: Modifier = Modifier
 ) {
-    val viewModel: TransactionRecordingViewModel = viewModel()
-    val transactionUiState by viewModel.transactionUiState.collectAsState()
     val context = LocalContext.current
+    val viewModel: TransactionRecordingViewModel = viewModel(
+        factory = TransactionRecordingViewModelFactory(context)
+    )
+    val transactionUiState by viewModel.transactionUiState.collectAsState()
 
     val optionsMenuKadar = listOf(
         "700",
@@ -76,10 +86,20 @@ fun TransactionRecordingScreen(
         "Jual",
         "Beli"
     )
-
-
     // State untuk menyimpan URI foto kamera
-    val cameraImageUri = remember { androidx.compose.runtime.mutableStateOf<Uri?>(null) }
+    val cameraImageUri = remember { mutableStateOf<Uri?>(null) }
+
+    // Snackbar host state
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Handle snackbar messages
+    LaunchedEffect(transactionUiState.snackbarMessage) {
+        transactionUiState.snackbarMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnackbarMessage()
+        }
+    }
+
 
     // Launcher untuk mengambil foto dari galeri
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -146,20 +166,63 @@ fun TransactionRecordingScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = "Pencatatan Transaksi",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Pencatatan Transaksi",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Network status indicator
+                        Icon(
+                            painter = if (transactionUiState.isOnline) painterResource(R.drawable.cloud_on) else painterResource(R.drawable.cloud_off),
+                            contentDescription = if (transactionUiState.isOnline) "Online" else "Offline",
+                            tint = if (transactionUiState.isOnline) Color.Green else Color.Red,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                },
+                actions = {
+                    // Sync button
+                    if (transactionUiState.unsyncedCount > 0) {
+                        Badge(
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.syncTransactions() },
+                                enabled = transactionUiState.isOnline && !transactionUiState.isLoading
+                            ) {
+                                if (transactionUiState.isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.icon_sync),
+                                        contentDescription = "Sync",
+                                        tint = if (transactionUiState.isOnline) Color.Blue else Color.Gray
+                                    )
+                                }
+                            }
+                            Text(text = "${transactionUiState.unsyncedCount}")
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFFFF9800)
                 )
             )
-        }) { innerPadding ->
+        }
+    ) { innerPadding ->
 
         Box(
             modifier = modifier
@@ -174,7 +237,38 @@ fun TransactionRecordingScreen(
                     .verticalScroll(rememberScrollState())
             ) {
 
-                // Tampilkan foto jika ada, jika tidak tampilkan placeholder
+                // Status indicator card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (transactionUiState.isOnline) Color(0xFFE8F5E8) else Color(0xFFFFF3CD)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = if (transactionUiState.isOnline) painterResource(R.drawable.cloud_on) else painterResource(R.drawable.cloud_off),
+                            contentDescription = null,
+                            tint = if (transactionUiState.isOnline) Color.Green else Color.Red
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (transactionUiState.isOnline) {
+                                "Mode Online - Data akan langsung disinkronkan"
+                            } else {
+                                "Mode Offline - Data akan disinkronkan saat online (${transactionUiState.unsyncedCount} belum tersinkron)"
+                            },
+                            fontSize = 12.sp,
+                            color = if (transactionUiState.isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                        )
+                    }
+                }
+
+                // Foto
                 if (transactionUiState.photoUri != null) {
                     Image(
                         painter = rememberAsyncImagePainter(transactionUiState.photoUri),
@@ -213,35 +307,30 @@ fun TransactionRecordingScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.baseline_insert_photo),
-                        contentDescription = "Gallery Icon",
-                        modifier = modifier
-                            .size(40.dp)
-                            .border(
-                                width = 1.dp,
-                                color = Color.Gray.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .clickable { handleOpenGallery() },
-                    )
+                    IconButton(
+                        onClick = { handleOpenGallery() }
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.baseline_insert_photo),
+                            contentDescription = "Gallery Icon",
+                            modifier = modifier.size(40.dp)
+                        )
+                    }
                     Spacer(modifier = modifier.width(16.dp))
 
-                    Image(
-                        painter = painterResource(id = R.drawable.outline_camera),
-                        contentDescription = "Camera Icon",
-                        modifier = modifier
-                            .size(40.dp)
-                            .border(
-                                width = 1.dp,
-                                color = Color.Gray.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .clickable { handleOpenCamera() }
-                    )
+                    IconButton(
+                        onClick = { handleOpenCamera() }
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.outline_camera),
+                            contentDescription = "Camera Icon",
+                            modifier = modifier.size(40.dp)
+                        )
+                    }
                 }
                 Spacer(modifier = modifier.height(24.dp))
 
+                // Form fields (sama seperti sebelumnya)
                 Text(
                     text = "ID Transaksi",
                     fontSize = 14.sp,
@@ -251,9 +340,10 @@ fun TransactionRecordingScreen(
 
                 TextField(
                     value = transactionUiState.idTransaksi,
-                    onValueChange = { viewModel.updateIdTransaksi(it) },
-                    placeholder = { Text(text = "Masukkan Id Transaksi", fontSize = 12.sp) },
+                    readOnly = true,
+                    onValueChange = {},
                     singleLine = true,
+                    shape = RoundedCornerShape(15.dp),
                     modifier = modifier
                         .fillMaxWidth()
                         .border(
@@ -264,12 +354,13 @@ fun TransactionRecordingScreen(
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
+                        focusedContainerColor = Color.Gray.copy(alpha = 0.5f),
+                        unfocusedContainerColor = Color.Gray.copy(alpha = 0.5f)
                     )
                 )
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Nama Barang
                 Text(
                     text = "Nama Barang",
                     fontSize = 14.sp,
@@ -298,6 +389,7 @@ fun TransactionRecordingScreen(
                 )
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Jumlah Barang
                 Text(
                     text = "Jumlah Barang",
                     fontSize = 14.sp,
@@ -335,6 +427,7 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Kadar Emas
                 Text(
                     text = "Kadar Emas",
                     fontSize = 14.sp,
@@ -375,8 +468,7 @@ fun TransactionRecordingScreen(
                     ExposedDropdownMenu(
                         expanded = transactionUiState.isKadarEmasExpanded,
                         onDismissRequest = { viewModel.updateKadarEmasExpanded(false) },
-                        modifier = modifier
-                            .background(Color.White)
+                        modifier = modifier.background(Color.White)
                     ) {
                         optionsMenuKadar.forEach { option ->
                             DropdownMenuItem(
@@ -391,6 +483,7 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Jenis Transaksi
                 Text(
                     text = "Jenis Transaksi",
                     fontSize = 14.sp,
@@ -413,7 +506,7 @@ fun TransactionRecordingScreen(
                         readOnly = true,
                         value = transactionUiState.jenisTransaksi,
                         onValueChange = {},
-                        placeholder = { Text("Pilih Kadar Emas", fontSize = 12.sp) },
+                        placeholder = { Text("Pilih Jenis Transaksi", fontSize = 12.sp) },
                         modifier = modifier
                             .menuAnchor()
                             .fillMaxWidth(),
@@ -431,8 +524,7 @@ fun TransactionRecordingScreen(
                     ExposedDropdownMenu(
                         expanded = transactionUiState.isJenisTransaksiExpanded,
                         onDismissRequest = { viewModel.updateJenisTransaksiExpanded(false) },
-                        modifier = modifier
-                            .background(Color.White)
+                        modifier = modifier.background(Color.White)
                     ) {
                         optionsJenisTransaksi.forEach { option ->
                             DropdownMenuItem(
@@ -447,6 +539,7 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Berat Emas
                 Text(
                     text = "Berat Emas (Gram)",
                     fontSize = 14.sp,
@@ -484,8 +577,9 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Ongkos
                 Text(
-                    text = "Ongkos",
+                    text = "Ongkos per Gram",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -521,6 +615,7 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Harga Dasar Emas per Gram
                 Text(
                     text = "Harga Dasar Emas per Gram",
                     fontSize = 14.sp,
@@ -563,6 +658,7 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
+                // Total Harga
                 Box(
                     modifier = modifier
                         .fillMaxWidth()
@@ -596,43 +692,111 @@ fun TransactionRecordingScreen(
                 }
                 Spacer(modifier = modifier.height(16.dp))
 
-                Button(
-                    onClick = { //jika field ada yang kosong, tampilkan snackbar
-                        if (transactionUiState.idTransaksi.isEmpty() ||
-                            transactionUiState.namaBarang.isEmpty() ||
-                            transactionUiState.kadarEmas.isEmpty() ||
-                            transactionUiState.beratEmas.isEmpty() ||
-                            transactionUiState.ongkos.isEmpty() ||
-                            transactionUiState.hargaDasarPerGram.isEmpty()
-                        ) {
-                            Toast.makeText(
-                                context,
-                                "Mohon lengkapi semua field sebelum menyimpan transaksi.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            viewModel.simpanTransaksi()
-                        }
-                    },
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .shadow(24.dp),
-                    shape = RoundedCornerShape(15.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFB300),
-                        contentColor = Color.White
-                    )
+                // Buttons Row
+                Row(
+                    modifier = modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Simpan Transaksi",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        color = Color.White,
+                    // Export PDF Button
+                    Button(
+                        onClick = { viewModel.exportToPdf() },
                         modifier = modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    )
+                            .weight(1f)
+                            .shadow(24.dp),
+                        shape = RoundedCornerShape(15.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2196F3),
+                            contentColor = Color.White
+                        ),
+                        enabled = !transactionUiState.isLoading
+                    ) {
+                        if (transactionUiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_picture_as_pdf_24),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "PDF",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    // Save Button
+                    Button(
+                        onClick = { viewModel.simpanTransaksi() },
+                        modifier = modifier
+                            .weight(2f)
+                            .shadow(24.dp),
+                        shape = RoundedCornerShape(15.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB300),
+                            contentColor = Color.White
+                        ),
+                        enabled = !transactionUiState.isSaving
+                    ) {
+                        if (transactionUiState.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = if (transactionUiState.isSaving) "Menyimpan..." else "Simpan Transaksi",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                Spacer(modifier = modifier.height(16.dp))
+
+                // Offline info card
+                if (!transactionUiState.isOnline && transactionUiState.unsyncedCount > 0) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFF3CD)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.cloud_off),
+                                    contentDescription = null,
+                                    tint = Color.Red
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Mode Offline",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE65100)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "${transactionUiState.unsyncedCount} transaksi menunggu sinkronisasi. Data akan otomatis tersinkron saat terhubung internet.",
+                                fontSize = 12.sp,
+                                color = Color(0xFFE65100)
+                            )
+                        }
+                    }
                 }
             }
         }

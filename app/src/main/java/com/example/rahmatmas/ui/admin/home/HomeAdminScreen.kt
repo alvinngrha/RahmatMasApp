@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.datastore.AdminAuthManager
+import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.GoldPriceRepository
 
 @Composable
@@ -58,6 +59,7 @@ fun HomeAdminScreen(
     onGoToTransactionHistory: () -> Unit,
 ) {
     val context = LocalContext.current
+    val networkMonitor = NetworkMonitor(context)
     val adminAuthManager = remember { AdminAuthManager(context) }
     val adminUsername by adminAuthManager.getAdminUsername().collectAsState(initial = "")
 
@@ -164,13 +166,14 @@ fun HomeAdminScreen(
                                 )
                             }
 
+
                             IconButton(
                                 onClick = { viewModel.refreshData() },
                                 modifier = Modifier
                                     .size(32.dp)
                                     .align(Alignment.CenterVertically),
 
-                            ) {
+                                ) {
                                 if (goldPriceState.isLoading) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(32.dp),

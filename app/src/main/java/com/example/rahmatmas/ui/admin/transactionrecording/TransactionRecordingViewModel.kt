@@ -1,11 +1,21 @@
 package com.example.rahmatmas.ui.admin.transactionrecording
 
 
+import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.rahmatmas.data.local.dao.TransactionEntity
+import com.example.rahmatmas.data.local.db.AppDatabase
+import com.example.rahmatmas.data.network.NetworkMonitor
+import com.example.rahmatmas.data.repository.OfflineTransactionRepository
+import com.example.rahmatmas.util.PdfGenerator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -28,13 +38,80 @@ data class TransactionUiState(
     val hargaDasarError: String? = null,
     val ongkosError: String? = null,
     val jumlahBarangError: String? = null,
-    val photoUri: Uri? = null // Tambahkan ini untuk menyimpan URI foto
+    val photoUri: Uri? = null,
+    val isOnline: Boolean = true,
+    val isSaving: Boolean = false,
+    val saveSuccess: Boolean = false,
+    val unsyncedCount: Int = 0
 )
 
-class TransactionRecordingViewModel : ViewModel() {
+class TransactionRecordingViewModel(
+    private val context: Context
+) : ViewModel() {
+
+    private val database = AppDatabase.getDatabase(context)
+    private val networkMonitor = NetworkMonitor(context)
+    private val offlineRepository = OfflineTransactionRepository(
+        transactionDao = database.transactionDao(),
+        networkMonitor = networkMonitor,
+        context = context
+    )
+    private val pdfGenerator = PdfGenerator(context)
 
     private val _transactionUiState = MutableStateFlow(TransactionUiState())
     val transactionUiState: StateFlow<TransactionUiState> = _transactionUiState.asStateFlow()
+
+    // Current network status
+    private var isCurrentlyOnline = true
+
+    init {
+        // Monitor network status
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { isOnline ->
+                isCurrentlyOnline = isOnline
+                _transactionUiState.value = _transactionUiState.value.copy(isOnline = isOnline)
+
+                // Update unsynced count
+                if (isOnline) {
+                    updateUnsyncedCount()
+                }
+            }
+        }
+
+        // Initial unsynced count
+        updateUnsyncedCount()
+        generateNewTransactionId()
+    }
+
+    private fun generateNewTransactionId() {
+        viewModelScope.launch {
+            try {
+                // Dapatkan semua transaksi untuk menghitung jumlahnya
+                // Menggunakan .first() untuk mendapatkan nilai saat ini sekali saja dari Flow
+                val allTransactions = offlineRepository.getAllTransactions().first()
+                val nextTransactionNumber = allTransactions.size + 1
+                // Format ID sesuai keinginan, contoh: "TRX-001", "TRX-002", dst.
+                // Atau bisa juga hanya angka jika Anda mau.
+                val newId = "RB-${String.format("%03d", nextTransactionNumber)}"
+                // Atau jika Anda ingin ID yang lebih sederhana:
+                // val newId = nextTransactionNumber.toString()
+
+                _transactionUiState.value = _transactionUiState.value.copy(idTransaksi = newId)
+            } catch (e: Exception) {
+                // Handle error jika gagal mendapatkan jumlah transaksi
+                Log.e("ViewModel", "Error generating new transaction ID", e)
+                // Anda bisa set ID default atau membiarkannya kosong
+                _transactionUiState.value = _transactionUiState.value.copy(idTransaksi = "ERROR-ID")
+            }
+        }
+    }
+
+    private fun updateUnsyncedCount() {
+        viewModelScope.launch {
+            val count = offlineRepository.getUnsyncedCount()
+            _transactionUiState.value = _transactionUiState.value.copy(unsyncedCount = count)
+        }
+    }
 
     //update id transaksi
     fun updateIdTransaksi(idTransaksi: String) {
@@ -43,16 +120,16 @@ class TransactionRecordingViewModel : ViewModel() {
 
     // Update nama barang
     fun updateNamaBarang(nama: String) {
-            if (nama.isNotEmpty()) {
-                _transactionUiState.value = _transactionUiState.value.copy(namaBarang = nama, error = null)
-            } else {
-                // Tampilkan pesan error jika nama barang kosong
-                _transactionUiState.value = _transactionUiState.value.copy(
-                    namaBarang = nama,
-                    error = "Nama barang tidak boleh kosong"
-                )
-            }
+        if (nama.isNotEmpty()) {
+            _transactionUiState.value = _transactionUiState.value.copy(namaBarang = nama, error = null)
+        } else {
+            // Tampilkan pesan error jika nama barang kosong
+            _transactionUiState.value = _transactionUiState.value.copy(
+                namaBarang = nama,
+                error = "Nama barang tidak boleh kosong"
+            )
         }
+    }
 
     fun updateJumlahBarang(jumlah: String) {
         if (jumlah.all { it.isDigit() } || jumlah.isEmpty()) {
@@ -76,8 +153,8 @@ class TransactionRecordingViewModel : ViewModel() {
 
     // Update kadar emas
     fun updateKadarEmas(kadar: String) {
-            _transactionUiState.value = _transactionUiState.value.copy(kadarEmas = kadar)
-        }
+        _transactionUiState.value = _transactionUiState.value.copy(kadarEmas = kadar)
+    }
 
     fun updateKadarEmasExpanded(isExpanded: Boolean) {
         _transactionUiState.value = _transactionUiState.value.copy(isKadarEmasExpanded = isExpanded)
@@ -94,15 +171,15 @@ class TransactionRecordingViewModel : ViewModel() {
 
     // Update berat emas
     fun updateBeratEmas(beratEmas: String) {
-        if (beratEmas.all { it.isDigit() } || beratEmas.isEmpty()) {
+        if (beratEmas.all { it.isDigit() || it == '.' } || beratEmas.isEmpty()) {
             _transactionUiState.value =
                 _transactionUiState.value.copy(beratEmas = beratEmas, beratError = null)
             calculateTotalHarga()
         } else {
-            // Tampilkan pesan error jika id transaksi tidak valid
+            // Tampilkan pesan error jika berat emas tidak valid
             _transactionUiState.value = _transactionUiState.value.copy(
                 beratEmas = beratEmas,
-                beratError = "berat emas harus berupa angka"
+                beratError = "Berat emas harus berupa angka"
             )
         }
     }
@@ -131,6 +208,7 @@ class TransactionRecordingViewModel : ViewModel() {
     fun updateOngkos(ongkos: String) {
         if (ongkos.all { it.isDigit() } || ongkos.isEmpty()) {
             _transactionUiState.value = _transactionUiState.value.copy(ongkos = ongkos, ongkosError = null)
+            calculateTotalHarga()
         } else {
             // Tampilkan pesan error jika ongkos tidak valid
             _transactionUiState.value = _transactionUiState.value.copy(
@@ -140,34 +218,187 @@ class TransactionRecordingViewModel : ViewModel() {
         }
     }
 
-
     // Hitung total harga
     private fun calculateTotalHarga() {
-        val hargaDasar = _transactionUiState.value.hargaDasarPerGram.toIntOrNull() ?: 0
+        val hargaDasar = _transactionUiState.value.hargaDasarPerGram.toDoubleOrNull() ?: 0.0
         val beratEmas = _transactionUiState.value.beratEmas.toDoubleOrNull() ?: 0.0
         val jumlahBarangDiBeli = _transactionUiState.value.jumlahBarang.toIntOrNull() ?: 1
 
-
-        // Hitung total harga
-        val totalHarga = (hargaDasar * beratEmas) * jumlahBarangDiBeli
+        // Hitung total harga: (harga dasar * berat) * jumlah + ongkos
+        val totalHarga = (hargaDasar * beratEmas * jumlahBarangDiBeli)
 
         _transactionUiState.value = _transactionUiState.value.copy(totalHarga = totalHarga)
     }
 
+    // Simpan transaksi (offline-first)
+    fun simpanTransaksi() {
+        viewModelScope.launch {
+            val currentState = _transactionUiState.value
 
-    fun hitungTotal() {
-        calculateTotalHarga()
+            // Validasi form
+            if (!validateForm(currentState)) {
+                return@launch
+            }
+
+            _transactionUiState.value = currentState.copy(isSaving = true, error = null)
+
+            try {
+                val result = offlineRepository.saveTransaction(
+                    idTransaksi = currentState.idTransaksi,
+                    namaBarang = currentState.namaBarang,
+                    jumlahBarang = currentState.jumlahBarang.toIntOrNull() ?: 1,
+                    kadarEmas = currentState.kadarEmas,
+                    jenisTransaksi = currentState.jenisTransaksi,
+                    beratEmas = currentState.beratEmas.toDoubleOrNull() ?: 0.0,
+                    ongkos = currentState.ongkos.toDoubleOrNull() ?: 0.0,
+                    hargaDasarPerGram = currentState.hargaDasarPerGram.toDoubleOrNull() ?: 0.0,
+                    totalHarga = currentState.totalHarga,
+                    photoPath = currentState.photoUri?.toString()
+                )
+
+                result.fold(
+                    onSuccess = { transactionId ->
+                        _transactionUiState.value = currentState.copy(
+                            isSaving = false,
+                            saveSuccess = true,
+                            snackbarMessage = if (currentState.isOnline)
+                                "Transaksi berhasil disimpan dan disinkronkan"
+                            else
+                                "Transaksi berhasil disimpan offline. Akan disinkronkan saat online."
+                        )
+                        updateUnsyncedCount()
+                        clearForm()
+                    },
+                    onFailure = { exception ->
+                        _transactionUiState.value = currentState.copy(
+                            isSaving = false,
+                            error = "Gagal menyimpan transaksi: ${exception.message}",
+                            snackbarMessage = "Gagal menyimpan transaksi"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _transactionUiState.value = currentState.copy(
+                    isSaving = false,
+                    error = "Terjadi kesalahan: ${e.message}",
+                    snackbarMessage = "Terjadi kesalahan saat menyimpan"
+                )
+            }
+        }
     }
 
-    fun simpanTransaksi() {
-        val currentState = _transactionUiState.value
-        println("Menyimpan transaksi:")
-        println("Nama Barang: ${currentState.namaBarang}")
-        println("Kadar Emas: ${currentState.kadarEmas}")
-        println("Berat Emas: ${currentState.beratEmas} gram")
-        println("Ongkos: ${formatCurrency(currentState.ongkos.toDoubleOrNull() ?: 0.0)}")
-        println("Harga Dasar per Gram: ${formatCurrency(currentState.hargaDasarPerGram.toDoubleOrNull() ?: 0.0)}")
-        println("Total Harga: ${formatCurrency(currentState.totalHarga)}")
+    // Validasi form
+    private fun validateForm(state: TransactionUiState): Boolean {
+        val errors = mutableListOf<String>()
+
+        if (state.namaBarang.isEmpty()) errors.add("Nama barang tidak boleh kosong")
+        if (state.kadarEmas.isEmpty()) errors.add("Kadar emas harus dipilih")
+        if (state.jenisTransaksi.isEmpty()) errors.add("Jenis transaksi harus dipilih")
+        if (state.beratEmas.isEmpty() || state.beratEmas.toDoubleOrNull() == null || state.beratEmas.toDouble() <= 0) {
+            errors.add("Berat emas harus diisi dengan angka yang valid")
+        }
+        if (state.hargaDasarPerGram.isEmpty() || state.hargaDasarPerGram.toDoubleOrNull() == null || state.hargaDasarPerGram.toDouble() <= 0) {
+            errors.add("Harga dasar per gram harus diisi dengan angka yang valid")
+        }
+
+        if (errors.isNotEmpty()) {
+            _transactionUiState.value = _transactionUiState.value.copy(
+                error = errors.first(),
+                snackbarMessage = errors.first()
+            )
+            return false
+        }
+
+        return true
+    }
+
+    // Export to PDF
+    fun exportToPdf() {
+        viewModelScope.launch {
+            try {
+                val currentState = _transactionUiState.value
+
+                if (!validateForm(currentState)) {
+                    return@launch
+                }
+
+                _transactionUiState.value = currentState.copy(isLoading = true)
+
+                // Create temporary transaction entity for PDF
+                val tempTransaction = TransactionEntity(
+                    id = currentState.idTransaksi.ifEmpty { "PREVIEW" },
+                    namaBarang = currentState.namaBarang,
+                    jumlahBarang = currentState.jumlahBarang.toIntOrNull() ?: 1,
+                    kadarEmas = currentState.kadarEmas,
+                    jenisTransaksi = currentState.jenisTransaksi,
+                    beratEmas = currentState.beratEmas.toDoubleOrNull() ?: 0.0,
+                    ongkos = currentState.ongkos.toDoubleOrNull() ?: 0.0,
+                    hargaDasarPerGram = currentState.hargaDasarPerGram.toDoubleOrNull() ?: 0.0,
+                    totalHarga = currentState.totalHarga,
+                    photoPath = currentState.photoUri?.toString(),
+                    createdAt = java.util.Date(),
+                    updatedAt = java.util.Date(),
+                    isSynced = currentState.isOnline
+                )
+
+                val result = pdfGenerator.generateSingleTransactionReceipt(tempTransaction)
+
+                result.fold(
+                    onSuccess = { filePath ->
+                        _transactionUiState.value = currentState.copy(
+                            isLoading = false,
+                            snackbarMessage = "PDF berhasil dibuat: $filePath"
+                        )
+                    },
+                    onFailure = { exception ->
+                        _transactionUiState.value = currentState.copy(
+                            isLoading = false,
+                            error = "Gagal membuat PDF: ${exception.message}",
+                            snackbarMessage = "Gagal membuat PDF"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _transactionUiState.value = _transactionUiState.value.copy(
+                    isLoading = false,
+                    error = "Terjadi kesalahan: ${e.message}",
+                    snackbarMessage = "Terjadi kesalahan saat membuat PDF"
+                )
+            }
+        }
+    }
+
+    // Manual sync
+    fun syncTransactions() {
+        viewModelScope.launch {
+            if (!isCurrentlyOnline) {
+                _transactionUiState.value = _transactionUiState.value.copy(
+                    snackbarMessage = "Tidak ada koneksi internet"
+                )
+                return@launch
+            }
+
+            _transactionUiState.value = _transactionUiState.value.copy(isLoading = true)
+
+            val result = offlineRepository.forcSync()
+
+            result.fold(
+                onSuccess = {
+                    _transactionUiState.value = _transactionUiState.value.copy(
+                        isLoading = false,
+                        snackbarMessage = "Sinkronisasi berhasil"
+                    )
+                    updateUnsyncedCount()
+                },
+                onFailure = { exception ->
+                    _transactionUiState.value = _transactionUiState.value.copy(
+                        isLoading = false,
+                        error = "Gagal sinkronisasi: ${exception.message}",
+                        snackbarMessage = "Gagal sinkronisasi"
+                    )
+                }
+            )
+        }
     }
 
     // Format currency untuk tampilan
@@ -181,10 +412,24 @@ class TransactionRecordingViewModel : ViewModel() {
         _transactionUiState.value = _transactionUiState.value.copy(photoUri = uri)
     }
 
-//    // Clear form
-//    fun clearForm() {
-//        _transactionUiState.value = TransactionUiState(
-//            hargaJualEmasHariIni = _transactionUiState.value.hargaJualEmasHariIni
-//        )
-//    }
+    // Clear form
+    fun clearForm() {
+        _transactionUiState.value = TransactionUiState(
+            isOnline = _transactionUiState.value.isOnline,
+            unsyncedCount = _transactionUiState.value.unsyncedCount
+        )
+        // Setelah form dibersihkan (misalnya setelah transaksi disimpan),
+        // hasilkan ID baru untuk transaksi berikutnya.
+        generateNewTransactionId()
+    }
+
+    // Clear snackbar message
+    fun clearSnackbarMessage() {
+        _transactionUiState.value = _transactionUiState.value.copy(snackbarMessage = null)
+    }
+
+    // Clear error
+    fun clearError() {
+        _transactionUiState.value = _transactionUiState.value.copy(error = null)
+    }
 }
