@@ -198,7 +198,7 @@ class PdfGenerator(private val context: Context) {
             val lineHeight = 15f
 
             // Header
-            canvas.drawText("TOKO EMAS RAHMAT", leftMargin, yPosition, titlePaint)
+            canvas.drawText("TOKO EMAS RAHMAT BARU", leftMargin, yPosition, titlePaint)
             yPosition += 20f
             canvas.drawText("STRUK TRANSAKSI", leftMargin, yPosition, titlePaint)
             yPosition += 25f
@@ -228,7 +228,7 @@ class PdfGenerator(private val context: Context) {
             canvas.drawText("Harga Dasar: ${formatCurrency(transaction.hargaDasarPerGram)}/gram", leftMargin, yPosition, paint)
             yPosition += lineHeight
 
-            canvas.drawText("Ongkos: ${formatCurrency(transaction.ongkos)}", leftMargin, yPosition, paint)
+            canvas.drawText("Ongkos: ${formatCurrency(transaction.ongkos)}/gram", leftMargin, yPosition, paint)
             yPosition += lineHeight
 
             // Separator

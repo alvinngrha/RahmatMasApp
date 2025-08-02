@@ -342,6 +342,7 @@ fun TransactionRecordingScreen(
                     value = transactionUiState.idTransaksi,
                     readOnly = true,
                     onValueChange = {},
+                    placeholder = { Text(text = "ID Transaksi akan otomatis diisi", fontSize = 12.sp) },
                     singleLine = true,
                     shape = RoundedCornerShape(15.dp),
                     modifier = modifier
@@ -354,8 +355,8 @@ fun TransactionRecordingScreen(
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = Color.Gray.copy(alpha = 0.5f),
-                        unfocusedContainerColor = Color.Gray.copy(alpha = 0.5f)
+                        focusedContainerColor = Color.LightGray.copy(alpha = 0.5f),
+                        unfocusedContainerColor = Color.LightGray.copy(alpha = 0.5f)
                     )
                 )
                 Spacer(modifier = modifier.height(16.dp))

@@ -283,7 +283,10 @@ fun TransactionItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp),
+            .shadow(
+                4.dp,
+                shape = RoundedCornerShape(12.dp),
+            ),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),

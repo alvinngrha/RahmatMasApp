@@ -3,7 +3,6 @@ package com.example.rahmatmas.ui.admin.transactionrecording
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.local.dao.TransactionEntity
@@ -14,7 +13,6 @@ import com.example.rahmatmas.util.PdfGenerator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -80,30 +78,6 @@ class TransactionRecordingViewModel(
 
         // Initial unsynced count
         updateUnsyncedCount()
-        generateNewTransactionId()
-    }
-
-    private fun generateNewTransactionId() {
-        viewModelScope.launch {
-            try {
-                // Dapatkan semua transaksi untuk menghitung jumlahnya
-                // Menggunakan .first() untuk mendapatkan nilai saat ini sekali saja dari Flow
-                val allTransactions = offlineRepository.getAllTransactions().first()
-                val nextTransactionNumber = allTransactions.size + 1
-                // Format ID sesuai keinginan, contoh: "TRX-001", "TRX-002", dst.
-                // Atau bisa juga hanya angka jika Anda mau.
-                val newId = "RB-${String.format("%03d", nextTransactionNumber)}"
-                // Atau jika Anda ingin ID yang lebih sederhana:
-                // val newId = nextTransactionNumber.toString()
-
-                _transactionUiState.value = _transactionUiState.value.copy(idTransaksi = newId)
-            } catch (e: Exception) {
-                // Handle error jika gagal mendapatkan jumlah transaksi
-                Log.e("ViewModel", "Error generating new transaction ID", e)
-                // Anda bisa set ID default atau membiarkannya kosong
-                _transactionUiState.value = _transactionUiState.value.copy(idTransaksi = "ERROR-ID")
-            }
-        }
     }
 
     private fun updateUnsyncedCount() {
@@ -418,9 +392,6 @@ class TransactionRecordingViewModel(
             isOnline = _transactionUiState.value.isOnline,
             unsyncedCount = _transactionUiState.value.unsyncedCount
         )
-        // Setelah form dibersihkan (misalnya setelah transaksi disimpan),
-        // hasilkan ID baru untuk transaksi berikutnya.
-        generateNewTransactionId()
     }
 
     // Clear snackbar message

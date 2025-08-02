@@ -89,7 +89,10 @@ fun HomeAdminScreen(
                     .fillMaxWidth()
                     .padding(4.dp)
                     .height(200.dp)
-                    .shadow(32.dp)
+                    .shadow(4.dp,
+                        shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
+                        clip = false
+                    )
                     .background(
                         color = Color(0xFFFF9800),
                         shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
@@ -200,7 +203,10 @@ fun HomeAdminScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .align(Alignment.CenterHorizontally)
-                    .shadow(24.dp)
+                    .shadow(4.dp,
+                        shape = RoundedCornerShape(15.dp),
+                        clip = false
+                    )
                     .background(
                         color = Color(0xFFFFFFFF),
                         shape = RoundedCornerShape(15.dp)
@@ -221,9 +227,12 @@ fun HomeAdminScreen(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .shadow(40.dp)
+                                .shadow(4.dp,
+                                    shape = RoundedCornerShape(15.dp),
+                                    clip = false
+                                )
                                 .background(
-                                    color = Color(0xFF2563EB).copy(alpha = 0.8f),
+                                    color = Color(0xFF2563EB),
                                     shape = RoundedCornerShape(15.dp)
                                 )
                                 .clickable { onGoToRecording() }
@@ -264,9 +273,11 @@ fun HomeAdminScreen(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .shadow(40.dp)
+                                .shadow(4.dp,
+                                    shape = RoundedCornerShape(15.dp),
+                                    clip = false)
                                 .background(
-                                    color = Color(0xFF10B981).copy(alpha = 0.8f),
+                                    color = Color(0xFF10B981),
                                     shape = RoundedCornerShape(15.dp)
                                 )
                                 .clickable { onGoToTransactionHistory() },
@@ -307,9 +318,11 @@ fun HomeAdminScreen(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .shadow(40.dp)
+                                .shadow(4.dp,
+                                    shape = RoundedCornerShape(15.dp),
+                                    clip = false)
                                 .background(
-                                    color = Color(0xFF9333EA).copy(alpha = 0.8f),
+                                    color = Color(0xFF9333EA),
                                     shape = RoundedCornerShape(15.dp)
                                 ),
                         ) {
@@ -356,9 +369,11 @@ fun HomeAdminScreen(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .shadow(40.dp)
+                                .shadow(4.dp,
+                                    shape = RoundedCornerShape(15.dp),
+                                    clip = false)
                                 .background(
-                                    color = Color(0xFFEA580C).copy(alpha = 0.8f),
+                                    color = Color(0xFFEA580C),
                                     shape = RoundedCornerShape(15.dp)
                                 ),
                         ) {
@@ -399,9 +414,11 @@ fun HomeAdminScreen(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .shadow(40.dp)
+                                .shadow(4.dp,
+                                    shape = RoundedCornerShape(15.dp),
+                                    clip = false,)
                                 .background(
-                                    color = Color(0xFFD4AF37).copy(alpha = 0.8f),
+                                    color = Color(0xFFD4AF37),
                                     shape = RoundedCornerShape(15.dp)
                                 ),
                         ) {
@@ -457,7 +474,9 @@ fun HomeAdminScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .shadow(24.dp)
+                    .shadow(4.dp,
+                        shape = RoundedCornerShape(15.dp),
+                        clip = false)
                     .align(Alignment.CenterHorizontally)
                     .background(
                         Color.White,

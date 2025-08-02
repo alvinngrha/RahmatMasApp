@@ -61,8 +61,9 @@ class OfflineTransactionRepository(
         photoPath: String? = null
     ): Result<String> {
         return try {
+            val newTransactionId = "RB-${UUID.randomUUID()}"
             val transaction = TransactionEntity(
-                id = idTransaksi.ifEmpty { UUID.randomUUID().toString() },
+                id = newTransactionId,
                 namaBarang = namaBarang,
                 jumlahBarang = jumlahBarang,
                 kadarEmas = kadarEmas,
@@ -74,7 +75,8 @@ class OfflineTransactionRepository(
                 photoPath = photoPath,
                 createdAt = Date(),
                 updatedAt = Date(),
-                isSynced = false
+                isSynced = false,
+                isDeleted = false
             )
 
             transactionDao.insertTransaction(transaction)
