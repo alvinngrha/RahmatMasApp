@@ -183,7 +183,9 @@ fun TransactionRecordingScreen(
 
                         // Network status indicator
                         Icon(
-                            painter = if (transactionUiState.isOnline) painterResource(R.drawable.cloud_on) else painterResource(R.drawable.cloud_off),
+                            painter = if (transactionUiState.isOnline) painterResource(R.drawable.cloud_on) else painterResource(
+                                R.drawable.cloud_off
+                            ),
                             contentDescription = if (transactionUiState.isOnline) "Online" else "Offline",
                             tint = if (transactionUiState.isOnline) Color.Green else Color.Red,
                             modifier = Modifier.size(16.dp)
@@ -243,7 +245,9 @@ fun TransactionRecordingScreen(
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (transactionUiState.isOnline) Color(0xFFE8F5E8) else Color(0xFFFFF3CD)
+                        containerColor = if (transactionUiState.isOnline) Color(0xFFE8F5E8) else Color(
+                            0xFFFFF3CD
+                        )
                     )
                 ) {
                     Row(
@@ -251,7 +255,9 @@ fun TransactionRecordingScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = if (transactionUiState.isOnline) painterResource(R.drawable.cloud_on) else painterResource(R.drawable.cloud_off),
+                            painter = if (transactionUiState.isOnline) painterResource(R.drawable.cloud_on) else painterResource(
+                                R.drawable.cloud_off
+                            ),
                             contentDescription = null,
                             tint = if (transactionUiState.isOnline) Color.Green else Color.Red
                         )
@@ -263,7 +269,9 @@ fun TransactionRecordingScreen(
                                 "Mode Offline - Data akan disinkronkan saat online (${transactionUiState.unsyncedCount} belum tersinkron)"
                             },
                             fontSize = 12.sp,
-                            color = if (transactionUiState.isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                            color = if (transactionUiState.isOnline) Color(0xFF2E7D32) else Color(
+                                0xFFE65100
+                            )
                         )
                     }
                 }
@@ -342,7 +350,12 @@ fun TransactionRecordingScreen(
                     value = transactionUiState.idTransaksi,
                     readOnly = true,
                     onValueChange = {},
-                    placeholder = { Text(text = "ID Transaksi akan otomatis diisi", fontSize = 12.sp) },
+                    placeholder = {
+                        Text(
+                            text = "ID Transaksi akan otomatis diisi",
+                            fontSize = 12.sp
+                        )
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(15.dp),
                     modifier = modifier
@@ -703,7 +716,11 @@ fun TransactionRecordingScreen(
                         onClick = { viewModel.exportToPdf() },
                         modifier = modifier
                             .weight(1f)
-                            .shadow(24.dp),
+                            .shadow(
+                                4.dp,
+                                shape = RoundedCornerShape(15.dp),
+                                clip = false
+                            ),
                         shape = RoundedCornerShape(15.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF2196F3),
@@ -737,7 +754,11 @@ fun TransactionRecordingScreen(
                         onClick = { viewModel.simpanTransaksi() },
                         modifier = modifier
                             .weight(2f)
-                            .shadow(24.dp),
+                            .shadow(
+                                4.dp,
+                                shape = RoundedCornerShape(15.dp),
+                                clip = false
+                            ),
                         shape = RoundedCornerShape(15.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFFFB300),

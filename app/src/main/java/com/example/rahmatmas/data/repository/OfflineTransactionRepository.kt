@@ -1,6 +1,7 @@
 package com.example.rahmatmas.data.repository
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.example.rahmatmas.data.local.dao.TransactionDao
 import com.example.rahmatmas.data.local.dao.TransactionEntity
@@ -26,6 +27,7 @@ class OfflineTransactionRepository(
 
     private val supabaseClient = SupabaseModule.client
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val photoUploadRepository = PhotoUploadRepository(context)
 
     // Current network status
     private var isCurrentlyOnline = false
@@ -58,10 +60,34 @@ class OfflineTransactionRepository(
         ongkos: Double,
         hargaDasarPerGram: Double,
         totalHarga: Double,
-        photoPath: String? = null
+        photoUri: Uri? = null
     ): Result<String> {
         return try {
             val newTransactionId = "RB-${UUID.randomUUID()}"
+
+            // Handle photo upload if photo exists
+            var localPhotoPath: String? = null
+            var cloudPhotoUrl: String? = null
+
+            if (photoUri != null) {
+                val photoResult = photoUploadRepository.uploadAndSavePhoto(
+                    photoUri = photoUri,
+                    transactionId = newTransactionId,
+                    isOnline = isCurrentlyOnline
+                )
+
+                photoResult.fold(
+                    onSuccess = { result ->
+                        localPhotoPath = result.localPath
+                        cloudPhotoUrl = result.cloudUrl
+                        Log.d("OfflineTransactionRepo", "Photo uploaded - Local: $localPhotoPath, Cloud: $cloudPhotoUrl")
+                    },
+                    onFailure = { exception ->
+                        Log.w("OfflineTransactionRepo", "Photo upload failed, continuing without photo", exception)
+                        // Continue without photo rather than failing the whole transaction
+                    }
+                )
+            }
             val transaction = TransactionEntity(
                 id = newTransactionId,
                 namaBarang = namaBarang,
@@ -72,7 +98,7 @@ class OfflineTransactionRepository(
                 ongkos = ongkos,
                 hargaDasarPerGram = hargaDasarPerGram,
                 totalHarga = totalHarga,
-                photoPath = photoPath,
+                photoPath = localPhotoPath,
                 createdAt = Date(),
                 updatedAt = Date(),
                 isSynced = false,
@@ -84,7 +110,7 @@ class OfflineTransactionRepository(
             // Try to sync immediately if online
             coroutineScope.launch {
                 if (isCurrentlyOnline) {
-                    syncSingleTransaction(transaction)
+                    syncSingleTransaction(transaction, cloudPhotoUrl)
                 }
             }
 
@@ -151,7 +177,20 @@ class OfflineTransactionRepository(
             Log.d("OfflineTransactionRepo", "Syncing ${unsyncedTransactions.size} transactions")
 
             for (entity in unsyncedTransactions) {
-                // Tidak upload foto, photo_path selalu null
+
+                // Try to upload photo if exists and not already uploaded
+                var cloudPhotoUrl: String? = null
+                if (!entity.photoPath.isNullOrEmpty()) {
+                    try {
+                        val photoUri = Uri.parse("file://${entity.photoPath}")
+                        val photoResult = photoUploadRepository.uploadPhoto(photoUri, entity.id)
+                        cloudPhotoUrl = photoResult.getOrNull()
+                    } catch (e: Exception) {
+                        Log.w("OfflineTransactionRepo", "Failed to upload photo for transaction ${entity.id}", e)
+                        // Continue without photo URL
+                    }
+                }
+
                 val supabaseTransaction = SupabaseTransaction(
                     id = entity.id,
                     nama_barang = entity.namaBarang,
@@ -162,7 +201,7 @@ class OfflineTransactionRepository(
                     ongkos = entity.ongkos,
                     harga_dasar_per_gram = entity.hargaDasarPerGram,
                     total_harga = entity.totalHarga,
-                    photo_path = null,
+                    photo_path = cloudPhotoUrl,
                     // ...created_at, updated_at...
                 )
                 supabaseClient.from("transactions").insert(supabaseTransaction)
@@ -179,9 +218,21 @@ class OfflineTransactionRepository(
     }
 
     // Sync single transaction
-    private suspend fun syncSingleTransaction(transaction: TransactionEntity): Result<Unit> {
+    private suspend fun syncSingleTransaction(transaction: TransactionEntity, cloudPhotoUrl: String? = null): Result<Unit> {
         return try {
-            // Tidak upload foto, photo_path selalu null
+
+            // Use provided cloudPhotoUrl or try to upload photo if exists
+            var finalPhotoUrl = cloudPhotoUrl
+            if (finalPhotoUrl == null && !transaction.photoPath.isNullOrEmpty()) {
+                try {
+                    val photoUri = Uri.parse("file://${transaction.photoPath}")
+                    val photoResult = photoUploadRepository.uploadPhoto(photoUri, transaction.id)
+                    finalPhotoUrl = photoResult.getOrNull()
+                } catch (e: Exception) {
+                    Log.w("OfflineTransactionRepo", "Failed to upload photo for single transaction", e)
+                }
+            }
+
             val supabaseTransaction = SupabaseTransaction(
                 id = transaction.id,
                 nama_barang = transaction.namaBarang,
@@ -192,7 +243,7 @@ class OfflineTransactionRepository(
                 ongkos = transaction.ongkos,
                 harga_dasar_per_gram = transaction.hargaDasarPerGram,
                 total_harga = transaction.totalHarga,
-                photo_path = null,
+                photo_path = finalPhotoUrl,
                 // ...created_at, updated_at...
             )
             supabaseClient.from("transactions").insert(supabaseTransaction)

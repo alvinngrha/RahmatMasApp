@@ -115,7 +115,12 @@ fun LoginCustomerScreen(
                         .padding(end = 8.dp)
                         .fillMaxWidth(),
                     shape = CircleShape,
-                    border = ButtonDefaults.outlinedButtonBorder,
+                    elevation = ButtonDefaults.elevatedButtonElevation(
+                        defaultElevation = 2.dp,
+                        pressedElevation = 4.dp,
+                        hoveredElevation = 4.dp,
+                        focusedElevation = 4.dp
+                    ),
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     enabled = !uiState.isLoading

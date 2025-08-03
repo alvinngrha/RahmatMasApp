@@ -227,7 +227,7 @@ class TransactionRecordingViewModel(
                     ongkos = currentState.ongkos.toDoubleOrNull() ?: 0.0,
                     hargaDasarPerGram = currentState.hargaDasarPerGram.toDoubleOrNull() ?: 0.0,
                     totalHarga = currentState.totalHarga,
-                    photoPath = currentState.photoUri?.toString()
+                    photoUri = currentState.photoUri,
                 )
 
                 result.fold(
