@@ -287,7 +287,7 @@ class TransactionRecordingViewModel(
     }
 
     // Export to PDF
-    fun exportToPdf() {
+    fun exportToPdf(openAfterSave: Boolean = false) {
         viewModelScope.launch {
             try {
                 val currentState = _transactionUiState.value
@@ -323,6 +323,11 @@ class TransactionRecordingViewModel(
                             isLoading = false,
                             snackbarMessage = "PDF berhasil dibuat: $filePath"
                         )
+
+                        // Buka PDF jika diminta
+                        if (openAfterSave) {
+                            pdfGenerator.openPdfFile(filePath)
+                        }
                     },
                     onFailure = { exception ->
                         _transactionUiState.value = currentState.copy(

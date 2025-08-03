@@ -164,7 +164,7 @@ class TransactionHistoryViewModel(
                     onSuccess = { filePath ->
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            snackbarMessage = "PDF berhasil dibuat: ${filePath.substringAfterLast("/")}"
+//                            snackbarMessage = "PDF berhasil dibuat: ${filePath.substringAfterLast("/")}"
                         )
                     },
                     onFailure = { exception ->
@@ -201,7 +201,7 @@ class TransactionHistoryViewModel(
                     return@launch
                 }
 
-                val result = pdfGenerator.generateTransactionReport(currentTransactions)
+                val result = pdfGenerator.generateMultipleTransactionReport(currentTransactions)
 
                 result.fold(
                     onSuccess = { filePath ->
@@ -243,8 +243,7 @@ class TransactionHistoryViewModel(
                     return@launch
                 }
 
-                val fileName = "laporan_${startDate.time}_${endDate.time}.pdf"
-                val result = pdfGenerator.generateTransactionReport(transactionsInRange, fileName)
+                val result = pdfGenerator.generateSingleTransactionReceipt(transaction = transactionsInRange.first())
 
                 result.fold(
                     onSuccess = { filePath ->

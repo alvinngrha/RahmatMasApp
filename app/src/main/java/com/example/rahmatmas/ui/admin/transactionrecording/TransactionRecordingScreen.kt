@@ -713,7 +713,7 @@ fun TransactionRecordingScreen(
                 ) {
                     // Export PDF Button
                     Button(
-                        onClick = { viewModel.exportToPdf() },
+                        onClick = { viewModel.exportToPdf(openAfterSave = false) },
                         modifier = modifier
                             .weight(1f)
                             .shadow(
@@ -769,8 +769,7 @@ fun TransactionRecordingScreen(
                         if (transactionUiState.isSaving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
+                                color = Color.Black,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- External Documents directory -->
     <external-files-path name="documents" path="Documents/" />
 
     <!-- Cache directory for camera photos -->
@@ -8,6 +9,15 @@
     <!-- Internal storage for saved photos -->
     <files-path name="transaction_photos" path="transaction_photos/" />
 
-    <!-- External storage if needed -->
+    <!-- External storage public directories -->
     <external-path name="external_files" path="." />
+
+    <!-- Untuk akses Downloads folder -->
+    <external-path name="downloads" path="Download/" />
+
+    <!-- Root external storage -->
+    <root-path name="root" path="." />
+
+    <!-- External media (untuk Android 10+) -->
+    <external-media-path name="external_media" path="." />
 </paths>
