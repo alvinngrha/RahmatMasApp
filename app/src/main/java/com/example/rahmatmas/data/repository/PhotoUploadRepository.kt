@@ -14,7 +14,8 @@ import java.io.InputStream
 class PhotoUploadRepository(private val context: Context) {
 
     private val supabaseClient = SupabaseModule.client
-    private val bucketName = "transaction-photos" // Nama bucket Supabase
+    private val bucketNameTransaction = "transaction-photos"
+    private val bucketNameStock = "stock-photos"
 
     /**
      * Upload foto ke Supabase Storage
@@ -22,6 +23,8 @@ class PhotoUploadRepository(private val context: Context) {
      * @param transactionId ID transaksi untuk nama file
      * @return Result dengan URL foto atau error
      */
+
+    //upload photo to bucket transaction
     suspend fun uploadPhoto(photoUri: Uri, transactionId: String): Result<String> {
         return try {
             withContext(Dispatchers.IO) {
@@ -34,7 +37,37 @@ class PhotoUploadRepository(private val context: Context) {
                     ?: return@withContext Result.failure(Exception("Gagal membaca file foto"))
 
                 // Upload to Supabase Storage
-                val bucket = supabaseClient.storage.from(bucketName)
+                val bucket = supabaseClient.storage.from(bucketNameTransaction)
+                bucket.upload(fileName, photoBytes) {
+                    upsert = false
+                }
+
+                // Get public URL
+                val publicUrl = bucket.publicUrl(fileName)
+
+                Log.d("PhotoUpload", "Photo uploaded successfully: $publicUrl")
+                Result.success(publicUrl)
+            }
+        } catch (e: Exception) {
+            Log.e("PhotoUpload", "Error uploading photo", e)
+            Result.failure(e)
+        }
+    }
+
+    //uploada photo to bucket stock
+    suspend fun uploadPhotoStock(photoUri: Uri, transactionId: String): Result<String> {
+        return try {
+            withContext(Dispatchers.IO) {
+                // Generate unique filename
+                val fileExtension = getFileExtension(photoUri)
+                val fileName = "${transactionId}.$fileExtension"
+
+                // Convert URI to ByteArray
+                val photoBytes = uriToByteArray(photoUri)
+                    ?: return@withContext Result.failure(Exception("Gagal membaca file foto"))
+
+                // Upload to Supabase Storage
+                val bucket = supabaseClient.storage.from(bucketNameStock)
                 bucket.upload(fileName, photoBytes) {
                     upsert = false
                 }
@@ -133,7 +166,7 @@ class PhotoUploadRepository(private val context: Context) {
         return try {
             // Extract filename from URL
             val fileName = photoUrl.substringAfterLast("/")
-            val bucket = supabaseClient.storage.from(bucketName)
+            val bucket = supabaseClient.storage.from(bucketNameTransaction)
             bucket.delete(fileName)
 
             Result.success(Unit)

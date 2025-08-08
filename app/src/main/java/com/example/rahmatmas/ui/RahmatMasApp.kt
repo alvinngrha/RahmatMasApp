@@ -39,6 +39,8 @@ import com.example.rahmatmas.ui.admin.login.LoginViewModelFactory
 import com.example.rahmatmas.ui.admin.navigation.AdminBottomNavItem
 import com.example.rahmatmas.ui.admin.onlinesale.OnlineSaleScreen
 import com.example.rahmatmas.ui.admin.profile.ProfileScreen
+import com.example.rahmatmas.ui.admin.stock.stockinput.StockInputScreen
+import com.example.rahmatmas.ui.admin.stock.stocklist.StockListScreen
 import com.example.rahmatmas.ui.admin.transactionhistory.TransactionHistoryScreen
 import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
 import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
@@ -167,6 +169,32 @@ fun RahmatMasApp(
                             navController.navigate("transactionhistory") {
                                 launchSingleTop = true
                             }
+                        },
+                        onGoToStockManagement = {
+                            navController.navigate("stocklistadmin") {
+                                launchSingleTop = true
+                            }
+                        },
+                    )
+                }
+
+                composable("stockinputadmin") {
+                    StockInputScreen(
+                        onBackClick = {
+                            navController.navigateUp()
+                        }
+                    )
+                }
+
+                composable("stocklistadmin") {
+                    StockListScreen(
+                        onAddStockClick = {
+                            navController.navigate("stockinputadmin") {
+                                launchSingleTop = true
+                            }
+                        },
+                        onBackClick = {
+                            navController.navigateUp()
                         }
                     )
                 }
