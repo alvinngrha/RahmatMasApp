@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.network.NetworkMonitor
-import com.example.rahmatmas.data.repository.GoldPriceRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,16 +19,14 @@ data class StockInputUiState(
     val kadarEmas: String = "",
     val kadarPersen: String = "",
     val beratEmas: String = "",
-    val ongkosPerGram: String = "",
-    val hargaDasarPerGram: Double = 0.0,
-    val totalHargaBarang: Double = 0.0,
+    val ongkosPerGram: String = "", // Changed from ongkosPerGram
     val selectedPhotoUri: Uri? = null,
     val isLoading: Boolean = false,
     val isOnline: Boolean = true,
-    val goldPricePerGram: Double = 0.0,
     val showSuccessDialog: Boolean = false,
     val errorMessage: String? = null,
     val validationErrors: Map<String, String> = emptyMap()
+    // Removed: goldPricePerGram, hargaDasarPerGram, totalHargaBarang
 )
 
 class StockInputViewModel(
@@ -41,7 +38,6 @@ class StockInputViewModel(
         networkMonitor = networkMonitor,
         context = context
     )
-    private val goldPriceRepository = GoldPriceRepository()
 
     private val _uiState = MutableStateFlow(StockInputUiState())
     val uiState: StateFlow<StockInputUiState> = _uiState.asStateFlow()
@@ -61,36 +57,11 @@ class StockInputViewModel(
         viewModelScope.launch {
             networkMonitor.isOnline.collect { isOnline ->
                 _uiState.value = _uiState.value.copy(isOnline = isOnline)
-                if (isOnline) {
-                    fetchGoldPrice()
-                } else {
+                if (!isOnline) {
                     _uiState.value = _uiState.value.copy(
                         errorMessage = "Tidak ada koneksi internet. Fitur ini memerlukan koneksi online."
                     )
                 }
-            }
-        }
-
-        // Initial gold price fetch if online
-        fetchGoldPrice()
-    }
-
-    private fun fetchGoldPrice() {
-        viewModelScope.launch {
-            try {
-                if (!_uiState.value.isOnline) return@launch
-
-                val response = goldPriceRepository.getGoldPrice()
-                if (response.isSuccessful) {
-                    val goldPriceData = response.body()
-                    // Assuming the API returns gold price in the first item
-                    val goldPrice = goldPriceData?.data?.firstOrNull()?.sell?.toDouble() ?: 0.0
-                    _uiState.value = _uiState.value.copy(goldPricePerGram = goldPrice)
-                    calculatePrices()
-                }
-            } catch (e: Exception) {
-                // Use default price if API fails
-                _uiState.value = _uiState.value.copy(goldPricePerGram = 1000000.0) // Default 1M per gram
             }
         }
     }
@@ -113,64 +84,29 @@ class StockInputViewModel(
             kadarPersen = "" // Reset kadar persen when kadar emas changes
         )
         clearValidationError("kadarEmas")
-        calculatePrices()
     }
 
     fun updateKadarPersen(value: String) {
         _uiState.value = _uiState.value.copy(kadarPersen = value)
         clearValidationError("kadarPersen")
-        calculatePrices()
     }
 
     fun updateBeratEmas(value: String) {
         if (value.isEmpty() || value.matches(Regex("^\\d*\\.?\\d*$"))) {
             _uiState.value = _uiState.value.copy(beratEmas = value)
             clearValidationError("beratEmas")
-            calculatePrices()
         }
     }
 
-    fun updateOngkosPerGram(value: String) {
+    fun updateOngkos(value: String) { // Changed from updateOngkosPerGram
         if (value.isEmpty() || value.matches(Regex("^\\d*\\.?\\d*$"))) {
             _uiState.value = _uiState.value.copy(ongkosPerGram = value)
-            clearValidationError("ongkosPerGram")
+            clearValidationError("ongkos")
         }
     }
 
     fun updateSelectedPhoto(uri: Uri?) {
         _uiState.value = _uiState.value.copy(selectedPhotoUri = uri)
-    }
-
-    private fun calculatePrices() {
-        val currentState = _uiState.value
-
-        if (currentState.kadarEmas.isNotEmpty() &&
-            currentState.kadarPersen.isNotEmpty() &&
-            currentState.beratEmas.isNotEmpty()) {
-
-            try {
-                val beratEmas = currentState.beratEmas.toDoubleOrNull() ?: 0.0
-                val baseGoldPrice = currentState.goldPricePerGram
-
-                // Calculate harga dasar per gram based on kadar persen
-                val persentase = currentState.kadarPersen.replace("%", "").toDoubleOrNull() ?: 0.0
-                val hargaDasarPerGram = (baseGoldPrice * persentase / 100)
-
-                // Calculate total harga barang
-                val totalHargaBarang = hargaDasarPerGram * beratEmas
-
-                _uiState.value = _uiState.value.copy(
-                    hargaDasarPerGram = hargaDasarPerGram,
-                    totalHargaBarang = totalHargaBarang
-                )
-            } catch (e: Exception) {
-                // Handle calculation errors
-                _uiState.value = _uiState.value.copy(
-                    hargaDasarPerGram = 0.0,
-                    totalHargaBarang = 0.0
-                )
-            }
-        }
     }
 
     private fun validateInputs(): Map<String, String> {
@@ -214,11 +150,11 @@ class StockInputViewModel(
         }
 
         if (currentState.ongkosPerGram.isBlank()) {
-            errors["ongkosPerGram"] = "Ongkos per gram tidak boleh kosong"
+            errors["ongkos"] = "Ongkos tidak boleh kosong"
         } else {
             val ongkos = currentState.ongkosPerGram.toDoubleOrNull()
             if (ongkos == null || ongkos < 0) {
-                errors["ongkosPerGram"] = "Ongkos per gram harus berupa angka non-negatif"
+                errors["ongkos"] = "Ongkos harus berupa angka non-negatif"
             }
         }
 
@@ -252,9 +188,7 @@ class StockInputViewModel(
                     kadarEmas = currentState.kadarEmas,
                     kadarPersen = currentState.kadarPersen,
                     beratEmas = currentState.beratEmas.toDouble(),
-                    ongkosPerGram = currentState.ongkosPerGram.toDouble(),
-                    hargaDasarPerGram = currentState.hargaDasarPerGram,
-                    totalHargaBarang = currentState.totalHargaBarang,
+                    ongkosPerGram = currentState.ongkosPerGram.toDouble(), // Changed from ongkosPerGram
                     photoUri = currentState.selectedPhotoUri
                 )
 
@@ -283,7 +217,6 @@ class StockInputViewModel(
 
     fun resetForm() {
         _uiState.value = StockInputUiState(
-            goldPricePerGram = _uiState.value.goldPricePerGram,
             isOnline = _uiState.value.isOnline
         )
     }

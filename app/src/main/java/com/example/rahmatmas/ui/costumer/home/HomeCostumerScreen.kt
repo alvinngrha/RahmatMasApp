@@ -1,6 +1,7 @@
 package com.example.rahmatmas.ui.costumer.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,8 +42,9 @@ import coil.compose.AsyncImage
 fun HomeCostumerScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
-    viewModel: HomeCostumerViewModel = viewModel()
+    onGoToCatalog: () -> Unit
 ) {
+    val viewModel: HomeCostumerViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val user = uiState.user
 
@@ -143,7 +145,8 @@ fun HomeCostumerScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
+                    .height(120.dp)
+                    .clickable { onGoToCatalog() },
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800))
             ) {
                 Column(

@@ -271,7 +271,7 @@ fun StockListScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(stocks) { stock ->
                         StockItem(
@@ -368,12 +368,6 @@ fun StockItem(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
-
-            // Stock details
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
                 Column {
                     Text(
                         text = "Kadar: ${stock.kadar_emas} (${stock.kadar_persen})",
@@ -393,37 +387,6 @@ fun StockItem(
                         color = Color.Gray
                     )
                 }
-
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text(
-                        text = currencyFormat.format(stock.harga_dasar_per_gram)
-                            .replace("Rp", "Rp "),
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        color = Color(0xFF2196F3)
-                    )
-                    Text(
-                        text = "per gram",
-                        fontSize = 10.sp,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = currencyFormat.format(stock.total_harga_barang).replace("Rp", "Rp "),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color(0xFFFF9800)
-                    )
-                    Text(
-                        text = "total",
-                        fontSize = 10.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // Action button

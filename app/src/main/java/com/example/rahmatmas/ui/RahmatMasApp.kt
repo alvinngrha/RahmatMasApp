@@ -43,6 +43,7 @@ import com.example.rahmatmas.ui.admin.stock.stockinput.StockInputScreen
 import com.example.rahmatmas.ui.admin.stock.stocklist.StockListScreen
 import com.example.rahmatmas.ui.admin.transactionhistory.TransactionHistoryScreen
 import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
+import com.example.rahmatmas.ui.costumer.catalog.CatalogScreen
 import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
 import com.example.rahmatmas.ui.costumer.login.LoginCustomerScreen
 import kotlinx.coroutines.flow.first
@@ -130,6 +131,13 @@ fun RahmatMasApp(
                             navController.navigate("logincostumer") {
                                 popUpTo("homecostumer") { inclusive = true }
                             }
+                        },
+                        onGoToCatalog = {
+                            // Navigate to catalog screen
+                            // Assuming you have a catalog screen, replace with actual navigation
+                            navController.navigate("catalogcostumer") {
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -213,6 +221,13 @@ fun RahmatMasApp(
 
                 composable("profileadmin") {
                     ProfileScreen()
+                }
+
+
+                composable("catalogcostumer"){
+                    CatalogScreen(
+                        onOrderClick = {}
+                    )
                 }
             }
         }

@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.UUID
 
+// Data class for dynamic price calculation
+data class StockPriceInfo(
+    val hargaDasarPerGram: Double,
+    val totalHarga: Double
+)
+
 class StockRepository(
     private val networkMonitor: NetworkMonitor,
     private val context: Context
@@ -55,16 +61,14 @@ class StockRepository(
         }
     }
 
-    // Save stock to Supabase
+    // Save stock to Supabase (Updated method signature)
     suspend fun saveStock(
         namaBarang: String,
         jumlahStok: Int,
         kadarEmas: String,
         kadarPersen: String,
         beratEmas: Double,
-        ongkosPerGram: Double,
-        hargaDasarPerGram: Double,
-        totalHargaBarang: Double,
+        ongkosPerGram: Double, // Changed from ongkosPerGram
         photoUri: Uri? = null
     ): Result<String> {
         return try {
@@ -94,10 +98,9 @@ class StockRepository(
                 kadar_emas = kadarEmas,
                 kadar_persen = kadarPersen,
                 berat_emas = beratEmas,
-                ongkos_per_gram = ongkosPerGram,
-                harga_dasar_per_gram = hargaDasarPerGram,
-                total_harga_barang = totalHargaBarang,
+                ongkos_per_gram = ongkosPerGram, // Changed from ongkos_per_gram
                 photo_path = cloudPhotoUrl
+                // Removed: harga_dasar_per_gram and total_harga_barang
             )
 
             supabaseClient.from("stocks").insert(stock)
@@ -216,5 +219,17 @@ class StockRepository(
             Log.e("StockRepository", "Error fetching low stock items", e)
             emit(emptyList())
         }
+    }
+
+    // Calculate dynamic price for stock item based on current gold price
+    fun calculateStockPrice(stock: SupabaseStock, currentGoldPrice: Double): StockPriceInfo {
+        val persentase = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
+        val hargaDasarPerGram = (currentGoldPrice * persentase / 100)
+        val totalHarga = hargaDasarPerGram * stock.berat_emas
+
+        return StockPriceInfo(
+            hargaDasarPerGram = hargaDasarPerGram,
+            totalHarga = totalHarga
+        )
     }
 }
