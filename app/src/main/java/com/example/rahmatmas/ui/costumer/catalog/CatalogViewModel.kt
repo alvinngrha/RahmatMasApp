@@ -4,18 +4,22 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.network.NetworkMonitor
+import com.example.rahmatmas.data.repository.GoldPriceRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.Locale
 
 data class CatalogUiState(
     val isLoading: Boolean = false,
     val isOnline: Boolean = true,
     val errorMessage: String? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val goldPrice: Double? = null
 )
 
 class CatalogViewModel(
@@ -27,6 +31,7 @@ class CatalogViewModel(
         networkMonitor = networkMonitor,
         context = context
     )
+    private val goldPriceRepository = GoldPriceRepository()
 
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
@@ -41,12 +46,25 @@ class CatalogViewModel(
         viewModelScope.launch {
             networkMonitor.isOnline.collect { isOnline ->
                 _uiState.value = _uiState.value.copy(isOnline = isOnline)
-                if (isOnline) {
-                    loadAvailableStocks()
-                } else {
+                if (isOnline && stocks.value.isEmpty()) {
+                    loadInitialData()
+                } else if (!isOnline) {
                     _stocks.value = emptyList()
+                    _uiState.value = _uiState.value.copy(goldPrice = null)
                 }
             }
+        }
+    }
+
+    fun loadInitialData() {
+        viewModelScope.launch {
+            if (!_uiState.value.isOnline) return@launch
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            // Fetch gold price first
+            fetchGoldPrice()
+            // Then load stocks
+            loadAvailableStocks()
+            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 
@@ -104,7 +122,7 @@ class CatalogViewModel(
     }
 
     fun refreshCatalog() {
-        loadAvailableStocks()
+        loadInitialData()
     }
 
     // Get stock by ID for order flow
@@ -142,7 +160,10 @@ class CatalogViewModel(
             SortOption.NAME_ASC -> currentStocks.sortBy { it.nama_barang }
             SortOption.NAME_DESC -> currentStocks.sortByDescending { it.nama_barang }
             SortOption.KADAR_ASC -> currentStocks.sortBy { it.kadar_emas.toIntOrNull() ?: 0 }
-            SortOption.KADAR_DESC -> currentStocks.sortByDescending { it.kadar_emas.toIntOrNull() ?: 0 }
+            SortOption.KADAR_DESC -> currentStocks.sortByDescending {
+                it.kadar_emas.toIntOrNull() ?: 0
+            }
+
             SortOption.WEIGHT_ASC -> currentStocks.sortBy { it.berat_emas }
             SortOption.WEIGHT_DESC -> currentStocks.sortByDescending { it.berat_emas }
             SortOption.STOCK_ASC -> currentStocks.sortBy { it.jumlah_stok }
@@ -156,6 +177,57 @@ class CatalogViewModel(
 
     fun clearErrorMessage() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    fun fetchGoldPrice() {
+        viewModelScope.launch {
+            try {
+                val response = goldPriceRepository.getGoldPrice()
+                if (response.isSuccessful) {
+                    val goldData = response.body()?.data?.firstOrNull()
+                    if (goldData?.buy != null) {
+                        // Process gold data as needed
+                        val price = goldData.sell.toDouble()
+                        _uiState.value = _uiState.value.copy(
+                            goldPrice = price,
+                            errorMessage = null
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "Data emas tidak ditemukan"
+                        )
+                    }
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Gagal mengambil data: ${response.code()}"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Terjadi kesalahan: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun calculatePrice(stock: SupabaseStock): Double? {
+
+        val hargaEmasHariIni = uiState.value.goldPrice ?: return null
+        val kadarPersen = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
+        val hargaDasarPerGram = (hargaEmasHariIni * kadarPersen / 100)
+        val beratEmas = stock.berat_emas
+
+        // Debug log
+        println("HargaEmas: $hargaEmasHariIni, KadarPersen: $kadarPersen, BeratEmas: $beratEmas")
+
+        // Rumus: Harga = (Harga Emas Hari Ini * Kadar Persen / 100) * Berat Emas
+        return hargaDasarPerGram * beratEmas
+    }
+
+    // Format currency untuk tampilan
+    fun formatCurrency(amount: Double): String {
+        val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+        return formatter.format(amount).replace("Rp", "Rp ")
     }
 }
 

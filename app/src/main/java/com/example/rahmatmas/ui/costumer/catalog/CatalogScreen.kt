@@ -84,6 +84,11 @@ fun CatalogScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     var selectedKadarFilter by remember { mutableStateOf("") }
 
+    // Trigger initial data load
+    LaunchedEffect(Unit) {
+        viewModel.loadInitialData()
+    }
+
     // Handle error messages
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -266,7 +271,7 @@ fun CatalogScreen(
                                 selectedKadarFilter = kadar
                                 viewModel.filterByKadarEmas(kadar)
                             },
-                            label = { Text("${kadar}K") },
+                            label = { Text(kadar) },
                             selected = selectedKadarFilter == kadar
                         )
                     }
@@ -379,7 +384,8 @@ fun CatalogScreen(
                         items(stocks) { stock ->
                             CatalogItem(
                                 stock = stock,
-                                onOrderClick = { onOrderClick(stock) }
+                                onOrderClick = { onOrderClick(stock) },
+                                viewModel = viewModel
                             )
                         }
                     }
@@ -393,12 +399,14 @@ fun CatalogScreen(
 fun CatalogItem(
     stock: SupabaseStock,
     onOrderClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: CatalogViewModel
 ) {
+//    val uiState by viewModel.uiState.collectAsState()
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(500.dp)
             .shadow(
                 4.dp,
                 shape = RoundedCornerShape(12.dp),
@@ -504,30 +512,51 @@ fun CatalogItem(
                             fontWeight = FontWeight.Medium
                         )
                     }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Ongkos/gram:",
+                            fontSize = 10.sp,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = viewModel.formatCurrency(stock.ongkos_per_gram),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Price info and order button
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE3F2FD)
-                )
-            ) {
+            val calculatedPrice = viewModel.calculatePrice(stock)
+
+            if (calculatedPrice != null) {
                 Text(
-                    text = "Harga sesuai emas hari ini",
+                    text = viewModel.formatCurrency(calculatedPrice),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF9800)
+                )
+                Text(
+                    text = "Total Harga",
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF1976D2),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    color = Color.Gray
+                )
+            } else {
+                Text(
+                    text = "Memuat harga...",
+                    fontSize = 12.sp,
+                    color = Color.Gray
                 )
             }
-            Text(
-                text = "Lihat harga saat order",
-                fontSize = 10.sp,
-                color = Color.Gray
-            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = onOrderClick,
