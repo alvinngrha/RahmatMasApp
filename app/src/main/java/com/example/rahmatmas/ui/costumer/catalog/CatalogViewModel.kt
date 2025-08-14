@@ -185,7 +185,7 @@ class CatalogViewModel(
                 val response = goldPriceRepository.getGoldPrice()
                 if (response.isSuccessful) {
                     val goldData = response.body()?.data?.firstOrNull()
-                    if (goldData?.buy != null) {
+                    if (goldData?.sell != null) {
                         // Process gold data as needed
                         val price = goldData.sell.toDouble()
                         _uiState.value = _uiState.value.copy(
