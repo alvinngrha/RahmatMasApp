@@ -20,12 +20,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -68,7 +66,7 @@ import com.example.rahmatmas.data.supabase.db.SupabaseStock
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
-    onOrderClick: (SupabaseStock) -> Unit,
+    onProductClick: (SupabaseStock) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -384,7 +382,7 @@ fun CatalogScreen(
                         items(stocks) { stock ->
                             CatalogItem(
                                 stock = stock,
-                                onOrderClick = { onOrderClick(stock) },
+                                onItemClick = { onProductClick(stock) },
                                 viewModel = viewModel
                             )
                         }
@@ -398,19 +396,18 @@ fun CatalogScreen(
 @Composable
 fun CatalogItem(
     stock: SupabaseStock,
-    onOrderClick: () -> Unit,
+    onItemClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CatalogViewModel
 ) {
-//    val uiState by viewModel.uiState.collectAsState()
-
     Card(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
                 4.dp,
                 shape = RoundedCornerShape(12.dp),
-            ),
+            )
+            .clickable(onClick = onItemClick),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
@@ -419,16 +416,6 @@ fun CatalogItem(
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            Text(
-                text = stock.nama_barang,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Photo (if exists)
             if (!stock.photo_path.isNullOrEmpty()) {
                 Card(
                     modifier = Modifier
@@ -446,96 +433,25 @@ fun CatalogItem(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Product specifications
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF5F5F5)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp)
-                ) {
-                    Text(
-                        text = "Spesifikasi",
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = Color(0xFFFF9800)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stock.nama_barang,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Kadar Emas:",
-                            fontSize = 10.sp,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = stock.kadar_emas,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+            Spacer(modifier = Modifier.height(4.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Berat:",
-                            fontSize = 10.sp,
-                            color = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = "${stock.berat_emas} gram",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+            Text(
+                text = "Kadar ${stock.kadar_emas}",
+                fontSize = 10.sp,
+                color = Color.Gray
+            )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Stok Tersedia:",
-                            fontSize = 10.sp,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = "${stock.jumlah_stok} Pcs",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+            Spacer(modifier = Modifier.height(4.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Ongkos/gram:",
-                            fontSize = 10.sp,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = viewModel.formatCurrency(stock.ongkos_per_gram),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Price info and order button
             val calculatedPrice = viewModel.calculatePrice(stock)
-
             if (calculatedPrice != null) {
                 Text(
                     text = viewModel.formatCurrency(calculatedPrice),
@@ -543,40 +459,11 @@ fun CatalogItem(
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF9800)
                 )
-                Text(
-                    text = "Total Harga",
-                    fontSize = 10.sp,
-                    color = Color.Gray
-                )
             } else {
                 Text(
                     text = "Memuat harga...",
                     fontSize = 12.sp,
                     color = Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = onOrderClick,
-                enabled = stock.jumlah_stok > 0,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF9800),
-                    disabledContainerColor = Color.Gray
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = if (stock.jumlah_stok > 0) "Order" else "Habis",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
                 )
             }
         }

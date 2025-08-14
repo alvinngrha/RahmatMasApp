@@ -44,6 +44,8 @@ import com.example.rahmatmas.ui.admin.stock.stocklist.StockListScreen
 import com.example.rahmatmas.ui.admin.transactionhistory.TransactionHistoryScreen
 import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
 import com.example.rahmatmas.ui.costumer.catalog.CatalogScreen
+import com.example.rahmatmas.ui.costumer.catalog.CatalogDetailScreen
+import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
 import com.example.rahmatmas.ui.costumer.login.LoginCustomerScreen
 import kotlinx.coroutines.flow.first
@@ -226,8 +228,21 @@ fun RahmatMasApp(
 
                 composable("catalogcostumer"){
                     CatalogScreen(
-                        onOrderClick = {}
+                        onProductClick = { stock ->
+                            navController.currentBackStackEntry?.savedStateHandle?.set("stock", stock)
+                            navController.navigate("catalogdetailcostumer")
+                        },
                     )
+                }
+
+                composable("catalogdetailcostumer"){
+                    val stock = navController.previousBackStackEntry?.savedStateHandle?.get<SupabaseStock>("stock")
+                    stock?.let {
+                        CatalogDetailScreen(
+                            stock = it,
+                            onBackClick = { navController.navigateUp() }
+                        )
+                    }
                 }
             }
         }
