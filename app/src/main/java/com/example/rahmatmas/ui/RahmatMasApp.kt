@@ -233,10 +233,7 @@ fun RahmatMasApp(
                 composable("catalogcostumer") {
                     CatalogScreen(
                         onProductClick = { stock ->
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "stock",
-                                stock
-                            )
+                            navController.currentBackStackEntry?.savedStateHandle?.set("stock", stock)
                             navController.navigate("catalogdetailcostumer")
                         },
                         onBackClick = { navController.navigateUp() }

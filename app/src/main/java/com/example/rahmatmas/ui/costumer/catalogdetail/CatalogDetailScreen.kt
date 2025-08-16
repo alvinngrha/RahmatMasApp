@@ -137,6 +137,17 @@ fun CatalogDetailScreen(
                     DetailRow(label = "Berat", value = "${stock.berat_emas} gram")
                     DetailRow(label = "Stok", value = "${stock.jumlah_stok} pcs")
                     DetailRow(label = "Ongkos/gram", value = viewModel.formatCurrency(stock.ongkos_per_gram))
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "harga emas dapat berubah setiap harinya mengikuti harga emas",
+                        fontSize = 12.sp,
+                        color = Color.Blue,
+                        textAlign = TextAlign.Justify,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
