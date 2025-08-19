@@ -14,4 +14,4 @@ data class SupabaseStock(
     val photo_path: String? = null,
     val created_at: String? = null,
     val updated_at: String? = null
-) : java.io.Serializable
+): java.io.Serializable

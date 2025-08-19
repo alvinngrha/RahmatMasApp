@@ -46,6 +46,7 @@ import com.example.rahmatmas.ui.admin.transactionhistory.TransactionHistoryScree
 import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
 import com.example.rahmatmas.ui.costumer.catalog.CatalogScreen
 import com.example.rahmatmas.ui.costumer.catalogdetail.CatalogDetailScreen
+import com.example.rahmatmas.ui.costumer.checkout.CheckoutScreen
 import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
 import com.example.rahmatmas.ui.costumer.login.LoginCustomerScreen
 import kotlinx.coroutines.flow.first
@@ -123,6 +124,7 @@ fun RahmatMasApp(
                         onLoginSuccess = {
                             navController.navigate("homecostumer") {
                                 popUpTo("logincostumer") { inclusive = true }
+                                launchSingleTop = true
                             }
                         }
                     )
@@ -164,8 +166,8 @@ fun RahmatMasApp(
                         onLogout = {
                             // Handle logout logic here
                             // For example, navigate to login screen or clear session
-                            navController.navigate("loginadmin") {
-                                popUpTo(navController.graph.findStartDestination().id) {
+                            navController.navigate("logincostumer") {
+                                popUpTo(navController.graph.id) {
                                     inclusive = true
                                 }
                             }
@@ -246,7 +248,27 @@ fun RahmatMasApp(
                     stock?.let {
                         CatalogDetailScreen(
                             stock = it,
-                            onBackClick = { navController.navigateUp() }
+                            onBackClick = { navController.navigateUp() },
+                            onOrderClick = { selected ->
+                                navController.currentBackStackEntry?.savedStateHandle?.set("checkoutStock", selected)
+                                navController.navigate("checkoutcostumer")
+                            }
+                        )
+                    }
+                }
+
+                composable("checkoutcostumer") {
+                    val stockCheckout =
+                        navController.previousBackStackEntry?.savedStateHandle?.get<SupabaseStock>("checkoutStock")
+                    stockCheckout?.let { stockItem ->
+                        CheckoutScreen(
+                            stock = stockItem,
+                            onBackClick = { navController.navigateUp() },
+                            onOrderPlaced = {
+                                navController.navigate("homecostumer") {
+                                    popUpTo("homecostumer") { inclusive = true }
+                                }
+                            }
                         )
                     }
                 }

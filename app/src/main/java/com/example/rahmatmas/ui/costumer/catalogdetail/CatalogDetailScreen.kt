@@ -52,6 +52,7 @@ import com.example.rahmatmas.ui.costumer.catalog.CatalogViewModelFactory
 fun CatalogDetailScreen(
     stock: SupabaseStock,
     onBackClick: () -> Unit,
+    onOrderClick: (SupabaseStock) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -173,7 +174,7 @@ fun CatalogDetailScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = { /* TODO: Implement order flow */ },
+                onClick = { onOrderClick(stock) },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth()
