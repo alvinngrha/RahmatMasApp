@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.checkout
+package com.example.rahmatmas.ui.customer.checkout
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

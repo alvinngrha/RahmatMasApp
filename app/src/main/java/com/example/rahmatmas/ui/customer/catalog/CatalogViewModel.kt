@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.catalog
+package com.example.rahmatmas.ui.customer.catalog
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

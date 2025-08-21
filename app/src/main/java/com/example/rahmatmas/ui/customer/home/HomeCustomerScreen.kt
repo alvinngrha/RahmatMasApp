@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.home
+package com.example.rahmatmas.ui.customer.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,12 +39,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 
 @Composable
-fun HomeCostumerScreen(
+fun HomeCustomerScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
-    onGoToCatalog: () -> Unit
+    onGoToCatalog: () -> Unit,
+    onGoToOrderStatus: () -> Unit
 ) {
-    val viewModel: HomeCostumerViewModel = viewModel()
+    val viewModel: HomeCustomerViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val user = uiState.user
 
@@ -145,7 +146,7 @@ fun HomeCostumerScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(100.dp)
                     .clickable { onGoToCatalog() },
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800))
             ) {
@@ -173,7 +174,28 @@ fun HomeCostumerScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
+                    .height(100.dp)
+                    .clickable { onGoToOrderStatus() },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Status Pesanan Anda",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800))
             ) {
                 Column(

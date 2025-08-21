@@ -44,11 +44,12 @@ import com.example.rahmatmas.ui.admin.stock.stockinput.StockInputScreen
 import com.example.rahmatmas.ui.admin.stock.stocklist.StockListScreen
 import com.example.rahmatmas.ui.admin.transactionhistory.TransactionHistoryScreen
 import com.example.rahmatmas.ui.admin.transactionrecording.TransactionRecordingScreen
-import com.example.rahmatmas.ui.costumer.catalog.CatalogScreen
-import com.example.rahmatmas.ui.costumer.catalogdetail.CatalogDetailScreen
-import com.example.rahmatmas.ui.costumer.checkout.CheckoutScreen
-import com.example.rahmatmas.ui.costumer.home.HomeCostumerScreen
-import com.example.rahmatmas.ui.costumer.login.LoginCustomerScreen
+import com.example.rahmatmas.ui.customer.catalog.CatalogScreen
+import com.example.rahmatmas.ui.customer.catalogdetail.CatalogDetailScreen
+import com.example.rahmatmas.ui.customer.checkout.CheckoutScreen
+import com.example.rahmatmas.ui.customer.home.HomeCustomerScreen
+import com.example.rahmatmas.ui.customer.login.LoginCustomerScreen
+import com.example.rahmatmas.ui.customer.orderstatus.OrderStatusScreen
 import kotlinx.coroutines.flow.first
 
 @Composable
@@ -130,7 +131,7 @@ fun RahmatMasApp(
                     )
                 }
                 composable("homecostumer") {
-                    HomeCostumerScreen(
+                    HomeCustomerScreen(
                         onLogout = {
                             navController.navigate("logincostumer") {
                                 popUpTo("homecostumer") { inclusive = true }
@@ -142,7 +143,21 @@ fun RahmatMasApp(
                             navController.navigate("catalogcostumer") {
                                 launchSingleTop = true
                             }
+                        },
+                        onGoToOrderStatus = {
+                            // Navigate to order status screen
+                            // Assuming you have an order status screen, replace with actual navigation
+                            navController.navigate("orderstatuscustomer") {
+                                launchSingleTop = true
+                            }
                         }
+                    )
+                }
+                composable("orderstatuscustomer") {
+                    OrderStatusScreen(
+                        onBackClick = {
+                            navController.navigateUp()
+                        },
                     )
                 }
                 composable("loginadmin") {

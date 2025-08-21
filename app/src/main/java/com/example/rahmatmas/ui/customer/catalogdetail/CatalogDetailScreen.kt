@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.catalogdetail
+package com.example.rahmatmas.ui.customer.catalogdetail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -44,8 +44,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
-import com.example.rahmatmas.ui.costumer.catalog.CatalogViewModel
-import com.example.rahmatmas.ui.costumer.catalog.CatalogViewModelFactory
+import com.example.rahmatmas.ui.customer.catalog.CatalogViewModel
+import com.example.rahmatmas.ui.customer.catalog.CatalogViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.login
+package com.example.rahmatmas.ui.customer.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,7 +42,7 @@ fun LoginCustomerScreen(
     onAdminClick: () -> Unit,
     onLoginSuccess: () -> Unit,
 ) {
-    val viewModel: LoginCostumerViewModel = viewModel()
+    val viewModel: LoginCustomerViewModel = viewModel()
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 

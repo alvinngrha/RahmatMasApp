@@ -1,10 +1,10 @@
-package com.example.rahmatmas.ui.costumer.login
+package com.example.rahmatmas.ui.customer.login
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rahmatmas.data.supabase.authgoogle.AuthManager
 import com.example.rahmatmas.data.supabase.AuthResponse
+import com.example.rahmatmas.data.supabase.authgoogle.AuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +16,7 @@ data class LoginUiState(
     val errorMessage: String? = null
 )
 
-class LoginCostumerViewModel : ViewModel() {
+class LoginCustomerViewModel : ViewModel() {
     private val authManager = AuthManager()
 
     private val _uiState = MutableStateFlow(LoginUiState())

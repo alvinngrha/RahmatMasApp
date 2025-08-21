@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.home
+package com.example.rahmatmas.ui.customer.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,7 +15,7 @@ data class HomeUiState(
     val errorMessage: String? = null
 )
 
-class HomeCostumerViewModel : ViewModel() {
+class HomeCustomerViewModel : ViewModel() {
     private val authManager = AuthManager()
 
     private val _uiState = MutableStateFlow(HomeUiState())

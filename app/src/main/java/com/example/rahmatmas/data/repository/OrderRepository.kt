@@ -19,22 +19,59 @@ class OrderRepository {
                 "p_recipient_name" to order.recipient_name,
                 "p_address" to order.address,
                 "p_phone" to order.phone,
-                "p_note" to order.note,
                 "p_shipping_option" to order.shipping_option,
-                "p_status" to order.status
+                "p_status" to order.status,
+                "p_note" to order.note
             )
         )
     }
 
     suspend fun getOrders(): List<SupabaseOrder> {
-        return client.from("orders").select().decodeList()
+        return client.from("orders").select().decodeList<SupabaseOrder>()
+            .sortedByDescending { it.created_at }
     }
 
-    suspend fun updateOrderStatus(id: String, status: String) {
-        client.from("orders").update({
-            set("status", status)
-        }) {
-            filter { eq("id", id) }
+    suspend fun getOrdersByStatus(status: String): List<SupabaseOrder> {
+        return client.from("orders")
+            .select()
+            .decodeList<SupabaseOrder>()
+            .filter { it.status == status }
+            .sortedByDescending { it.created_at }
+    }
+
+    suspend fun updateOrderStatus(
+        id: String,
+        status: String,
+        cancelReason: String? = null,
+        cancelledBy: String? = null
+    ) {
+        // Use RPC function instead of direct update
+        val params = mutableMapOf<String, Any?>(
+            "p_order_id" to id,
+            "p_status" to status
+        )
+
+        if (status == "dibatalkan") {
+            params["p_cancel_reason"] = cancelReason
+            params["p_cancelled_by"] = cancelledBy
         }
+
+        client.postgrest.rpc("update_order_status", params)
+    }
+
+    suspend fun getOrderById(id: String): SupabaseOrder? {
+        return client.from("orders")
+            .select()
+            .decodeList<SupabaseOrder>()
+            .find { it.id == id }
+    }
+
+    // For customer to view their orders
+    suspend fun getOrdersByPhone(phone: String): List<SupabaseOrder> {
+        return client.from("orders")
+            .select()
+            .decodeList<SupabaseOrder>()
+            .filter { it.phone == phone }
+            .sortedByDescending { it.created_at }
     }
 }

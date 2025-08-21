@@ -1,4 +1,4 @@
-package com.example.rahmatmas.ui.costumer.catalog
+package com.example.rahmatmas.ui.customer.catalog
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
