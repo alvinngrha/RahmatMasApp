@@ -19,6 +19,7 @@ data class SupabaseOrder(
     val cancelled_by: String? = null // "admin" or "customer"
 ) : java.io.Serializable
 
+@Serializable
 enum class OrderStatus(val displayName: String) {
     PENDING("Menunggu Konfirmasi"),
     PROCESSING("Sedang Diproses"),

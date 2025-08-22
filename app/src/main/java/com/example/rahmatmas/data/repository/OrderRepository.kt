@@ -46,7 +46,7 @@ class OrderRepository {
         cancelledBy: String? = null
     ) {
         // Use RPC function instead of direct update
-        val params = mutableMapOf<String, Any?>(
+        val params = mutableMapOf<String, String?>(
             "p_order_id" to id,
             "p_status" to status
         )
