@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.OrderRepository
+import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.OrderStatus
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.toDbString
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +18,9 @@ import kotlinx.coroutines.launch
 data class OrderStatusUiState(
     val isLoading: Boolean = false,
     val orders: List<SupabaseOrder> = emptyList(),
-    val searchedPhone: String = "",
+    val userEmail: String = "",
+    val userName: String = "",
+    val userId: String = "",
     val errorMessage: String? = null,
     val isOnline: Boolean = true,
     val showCancelDialog: Boolean = false,
@@ -29,11 +33,13 @@ class OrderStatusViewModel(
 
     private val orderRepository = OrderRepository()
     private val networkMonitor = NetworkMonitor(context)
+    private val supabaseClient = SupabaseModule.client
 
     private val _uiState = MutableStateFlow(OrderStatusUiState())
     val uiState: StateFlow<OrderStatusUiState> = _uiState.asStateFlow()
 
     init {
+        loadUserData()
         // Monitor network status
         viewModelScope.launch {
             networkMonitor.isOnline.collect { isOnline ->
@@ -47,17 +53,31 @@ class OrderStatusViewModel(
         }
     }
 
-    fun searchOrders(phoneNumber: String) {
+    private fun loadUserData() {
+        val currentUser = supabaseClient.auth.currentUserOrNull()
+        if (currentUser != null) {
+            _uiState.value = _uiState.value.copy(
+                userId = currentUser.id,
+                userEmail = currentUser.email ?: "",
+                userName = currentUser.userMetadata?.get("full_name")?.toString()
+                    ?: currentUser.userMetadata?.get("name")?.toString()
+                    ?: ""
+            )
+        }
+    }
+
+    fun loadUserOrders() {
         if (!_uiState.value.isOnline) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "Memerlukan koneksi internet untuk mencari pesanan"
+                errorMessage = "Memerlukan koneksi internet untuk memuat pesanan"
             )
             return
         }
 
-        if (phoneNumber.isBlank()) {
+        val currentUser = supabaseClient.auth.currentUserOrNull()
+        if (currentUser == null) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "Nomor HP tidak boleh kosong"
+                errorMessage = "Anda harus login terlebih dahulu"
             )
             return
         }
@@ -69,32 +89,24 @@ class OrderStatusViewModel(
             )
 
             try {
-                val orders = orderRepository.getOrdersByPhone(phoneNumber.trim())
+                // Use getCurrentUserOrders which should use RLS (Row Level Security)
+                // or getOrdersByUserId with current user ID
+                val orders = orderRepository.getOrdersByUserId(currentUser.id)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    orders = orders,
-                    searchedPhone = phoneNumber.trim()
+                    orders = orders
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Gagal mencari pesanan: ${e.message}"
+                    errorMessage = "Gagal memuat pesanan: ${e.message}"
                 )
             }
         }
     }
 
     fun refreshOrders() {
-        val currentPhone = _uiState.value.searchedPhone
-        if (currentPhone.isNotBlank()) {
-            searchOrders(currentPhone)
-        }
-    }
-
-    fun clearSearch() {
-        _uiState.value = OrderStatusUiState(
-            isOnline = _uiState.value.isOnline
-        )
+        loadUserOrders()
     }
 
     fun showCancelDialog(order: SupabaseOrder) {
@@ -147,5 +159,15 @@ class OrderStatusViewModel(
 
     fun clearErrorMessage() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    // Remove the search methods since we're now auto-loading user orders
+    // Keep for backward compatibility if needed elsewhere
+    fun searchOrders(phoneNumber: String) {
+        // This method is no longer needed but kept for compatibility
+    }
+
+    fun clearSearch() {
+        // This method is no longer needed but kept for compatibility
     }
 }

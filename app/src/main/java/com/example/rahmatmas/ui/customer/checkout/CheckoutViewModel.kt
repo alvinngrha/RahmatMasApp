@@ -3,8 +3,10 @@ package com.example.rahmatmas.ui.customer.checkout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.repository.OrderRepository
+import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,14 +18,51 @@ data class CheckoutUiState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
-    val successOrderId: String? = null
+    val successOrderId: String? = null,
+    val userName: String = "",
+    val userEmail: String = ""
 )
 
 class CheckoutViewModel : ViewModel() {
     private val orderRepository = OrderRepository()
+    private val supabaseClient = SupabaseModule.client
 
     private val _uiState = MutableStateFlow(CheckoutUiState())
     val uiState: StateFlow<CheckoutUiState> = _uiState.asStateFlow()
+
+    init {
+        loadUserData()
+    }
+
+    private fun loadUserData() {
+        val currentUser = supabaseClient.auth.currentUserOrNull()
+        if (currentUser != null) {
+            _uiState.value = _uiState.value.copy(
+                userName = currentUser.userMetadata?.get("full_name")?.toString()
+                    ?: currentUser.userMetadata?.get("name")?.toString()
+                    ?: "",
+                userEmail = currentUser.email ?: ""
+            )
+        }
+    }
+
+    fun getCurrentUserEmail(): String? {
+        return try {
+            supabaseClient.auth.currentUserOrNull()?.email
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getCurrentUserName(): String? {
+        return try {
+            val user = supabaseClient.auth.currentUserOrNull()
+            user?.userMetadata?.get("full_name")?.toString()
+                ?: user?.userMetadata?.get("name")?.toString()
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     fun placeOrder(
         stock: SupabaseStock,
@@ -34,18 +73,30 @@ class CheckoutViewModel : ViewModel() {
         shippingOption: String
     ) {
         viewModelScope.launch {
-            _uiState.value = CheckoutUiState(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            // Get current user
+            val currentUser = supabaseClient.auth.currentUserOrNull()
+            if (currentUser == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Anda harus login terlebih dahulu"
+                )
+                return@launch
+            }
 
             // Validate inputs
             if (name.isBlank() || address.isBlank() || phone.isBlank()) {
-                _uiState.value = CheckoutUiState(
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
                     errorMessage = "Semua field wajib diisi (kecuali catatan)"
                 )
                 return@launch
             }
 
             if (phone.length < 10) {
-                _uiState.value = CheckoutUiState(
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
                     errorMessage = "Nomor HP tidak valid"
                 )
                 return@launch
@@ -57,6 +108,7 @@ class CheckoutViewModel : ViewModel() {
 
                 val order = SupabaseOrder(
                     id = orderId,
+                    user_id = currentUser.id, // Use authenticated user ID
                     stock_id = stock.id_barang,
                     stock_name = stock.nama_barang,
                     recipient_name = name.trim(),
@@ -73,12 +125,14 @@ class CheckoutViewModel : ViewModel() {
 
                 orderRepository.placeOrder(order)
 
-                _uiState.value = CheckoutUiState(
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
                     isSuccess = true,
                     successOrderId = orderId
                 )
             } catch (e: Exception) {
-                _uiState.value = CheckoutUiState(
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
                     errorMessage = "Gagal memproses pesanan: ${e.message}"
                 )
             }
@@ -86,7 +140,10 @@ class CheckoutViewModel : ViewModel() {
     }
 
     fun resetState() {
-        _uiState.value = CheckoutUiState()
+        _uiState.value = CheckoutUiState(
+            userName = _uiState.value.userName,
+            userEmail = _uiState.value.userEmail
+        )
     }
 
     fun clearError() {

@@ -74,4 +74,22 @@ class OrderRepository {
             .filter { it.phone == phone }
             .sortedByDescending { it.created_at }
     }
+
+    // Get orders by authenticated user ID
+    suspend fun getOrdersByUserId(userId: String): List<SupabaseOrder> {
+        return client.from("orders")
+            .select { filter {
+                eq("user_id", userId)
+            } }
+            .decodeList<SupabaseOrder>()
+            .sortedByDescending { it.created_at }
+    }
+
+    // Get current user's orders (using Supabase RLS - Row Level Security)
+    suspend fun getCurrentUserOrders(): List<SupabaseOrder> {
+        return client.from("orders")
+            .select()
+            .decodeList<SupabaseOrder>()
+            .sortedByDescending { it.created_at }
+    }
 }

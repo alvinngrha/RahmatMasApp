@@ -20,9 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,7 +79,11 @@ fun OrderStatusScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var phoneNumber by remember { mutableStateOf("") }
+
+    // Auto-load user orders when screen opens
+    LaunchedEffect(Unit) {
+        viewModel.loadUserOrders()
+    }
 
     // Show error messages in snackbar
     LaunchedEffect(uiState.errorMessage) {
@@ -96,7 +99,7 @@ fun OrderStatusScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Status Pesanan",
+                        text = "Pesanan Saya",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = Color.White
@@ -112,24 +115,22 @@ fun OrderStatusScreen(
                     }
                 },
                 actions = {
-                    if (uiState.orders.isNotEmpty()) {
-                        IconButton(
-                            onClick = { viewModel.refreshOrders() },
-                            enabled = !uiState.isLoading
-                        ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color.White
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Refresh",
-                                    tint = Color.White
-                                )
-                            }
+                    IconButton(
+                        onClick = { viewModel.refreshOrders() },
+                        enabled = !uiState.isLoading
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh",
+                                tint = Color.White
+                            )
                         }
                     }
                 },
@@ -146,171 +147,111 @@ fun OrderStatusScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-
-            if (uiState.searchedPhone.isBlank()) {
-                // Phone number input
+            // User info card
+            if (uiState.userEmail.isNotBlank()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            tint = Color(0xFFFF9800)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Akun Google:",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            if (uiState.userName.isNotBlank()) {
+                                Text(
+                                    text = uiState.userName,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF2C3E50)
+                                )
+                            }
+                            Text(
+                                text = uiState.userEmail,
+                                fontSize = 13.sp,
+                                color = Color(0xFF2C3E50)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Orders content
+            if (uiState.isLoading && uiState.orders.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFFF9800))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Memuat pesanan...", color = Color.Gray)
+                    }
+                }
+            } else if (!uiState.isLoading && uiState.orders.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Phone,
+                            painter = painterResource(R.drawable.logo_inventory),
                             contentDescription = null,
-                            tint = Color(0xFFFF9800),
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Gray
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Cek Status Pesanan",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color(0xFF2C3E50)
+                            text = "Belum ada pesanan",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Gray
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Masukkan nomor HP yang digunakan saat order untuk melihat status pesanan Anda",
+                            text = "Pesanan Anda akan muncul di sini setelah checkout",
                             fontSize = 14.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        OutlinedTextField(
-                            value = phoneNumber,
-                            onValueChange = { phoneNumber = it },
-                            label = { Text("Nomor HP") },
-                            placeholder = { Text("Contoh: 08123456789") },
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = null
-                                )
-                            }
-                        )
-
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = { viewModel.searchOrders(phoneNumber) },
-                            enabled = phoneNumber.isNotBlank() && !uiState.isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFF9800)
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                        TextButton(
+                            onClick = { viewModel.refreshOrders() }
                         ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Mencari...")
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Cari Pesanan", fontSize = 16.sp)
-                            }
+                            Text("Muat Ulang", color = Color(0xFFFF9800))
                         }
                     }
                 }
             } else {
-                // Search results
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "Pesanan untuk:",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                    items(uiState.orders) { order ->
+                        CustomerOrderCard(
+                            order = order,
+                            onCancelClick = {
+                                viewModel.showCancelDialog(order)
+                            }
                         )
-                        Text(
-                            text = uiState.searchedPhone,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF2C3E50)
-                        )
-                    }
-
-                    TextButton(
-                        onClick = { viewModel.clearSearch() }
-                    ) {
-                        Text("Cari Lagi", color = Color(0xFFFF9800))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Orders list
-                if (uiState.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            CircularProgressIndicator(color = Color(0xFFFF9800))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Mencari pesanan...", color = Color.Gray)
-                        }
-                    }
-                } else if (uiState.orders.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.logo_inventory),
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Tidak ada pesanan",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = "Belum ada pesanan dengan nomor HP ini",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(uiState.orders) { order ->
-                            CustomerOrderCard(
-                                order = order,
-                                onCancelClick = {
-                                    viewModel.showCancelDialog(order)
-                                }
-                            )
-                        }
                     }
                 }
             }
@@ -422,6 +363,7 @@ private fun CustomerOrderCard(
                 ) {
                     OrderInfoRow("Penerima", order.recipient_name)
                     OrderInfoRow("Alamat", order.address)
+                    OrderInfoRow("No. HP", order.phone)
                     OrderInfoRow("Pengiriman", order.shipping_option.replaceFirstChar { it.uppercase() })
 
                     if (!order.note.isNullOrBlank()) {

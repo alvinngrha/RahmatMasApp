@@ -1,11 +1,15 @@
 package com.example.rahmatmas.ui.customer.checkout
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -28,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
@@ -48,6 +53,13 @@ fun CheckoutScreen(
     var shippingOption by remember { mutableStateOf("diantar") }
 
     val uiState by viewModel.uiState.collectAsState()
+
+    // Auto-fill name from Google account
+    LaunchedEffect(uiState.userName) {
+        if (uiState.userName.isNotBlank() && name.isBlank()) {
+            name = uiState.userName
+        }
+    }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -79,40 +91,65 @@ fun CheckoutScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
+            // Show user info from Google account
+            if (uiState.userName.isNotBlank()) {
+                OutlinedTextField(
+                    value = uiState.userName,
+                    onValueChange = { },
+                    label = { Text("Akun Google") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false,
+                    supportingText = { Text("Data dari akun Google: ${uiState.userEmail}") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Nama Penerima") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Masukkan nama penerima") }
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
-                label = { Text("Alamat") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Alamat Lengkap") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Masukkan alamat pengiriman") },
+                minLines = 2
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
                 label = { Text("Nomor HP") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                placeholder = { Text("Contoh: 08123456789") }
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = { Text("Catatan (opsional)") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Catatan tambahan untuk pesanan") },
+                minLines = 2
             )
             Spacer(modifier = Modifier.height(16.dp))
+
             Text(text = "Opsi Pengiriman")
             Column {
                 RowOption(
                     selected = shippingOption == "diantar",
-                    label = "Diantar",
+                    label = "Diantar ke Alamat",
                     onClick = { shippingOption = "diantar" }
                 )
                 RowOption(
@@ -122,6 +159,7 @@ fun CheckoutScreen(
                 )
             }
             Spacer(modifier = Modifier.height(24.dp))
+
             Button(
                 onClick = {
                     viewModel.placeOrder(
@@ -136,8 +174,9 @@ fun CheckoutScreen(
                 enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Checkout")
+                Text(text = if (uiState.isLoading) "Memproses..." else "Buat Pesanan")
             }
+
             if (uiState.errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = uiState.errorMessage ?: "", color = Color.Red)
@@ -148,7 +187,7 @@ fun CheckoutScreen(
 
 @Composable
 private fun RowOption(selected: Boolean, label: String, onClick: () -> Unit) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         modifier = Modifier.padding(vertical = 4.dp)
     ) {
