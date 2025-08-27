@@ -6,8 +6,6 @@ import kotlinx.serialization.Serializable
 data class SupabaseOrder(
     val id: String,
     val user_id: String?, // User ID from Supabase Auth
-    val stock_id: String,
-    val stock_name: String,
     val recipient_name: String,
     val address: String,
     val phone: String,

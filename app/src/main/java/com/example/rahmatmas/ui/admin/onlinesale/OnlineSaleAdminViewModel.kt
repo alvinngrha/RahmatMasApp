@@ -7,7 +7,7 @@ import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.OrderRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.db.OrderStatus
-import com.example.rahmatmas.data.supabase.db.SupabaseOrder
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toDbString
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,13 +17,13 @@ import kotlinx.coroutines.launch
 
 data class OnlineSaleUiState(
     val isLoading: Boolean = false,
-    val allOrders: List<SupabaseOrder> = emptyList(),
+    val allOrders: List<SupabaseOrderWithItems> = emptyList(),
     val selectedTabIndex: Int = 0,
     val errorMessage: String? = null,
     val isOnline: Boolean = true,
     val stockDetails: Map<String, SupabaseStock> = emptyMap(),
     val showCancelDialog: Boolean = false,
-    val selectedOrderForCancel: SupabaseOrder? = null
+    val selectedOrderForCancel: SupabaseOrderWithItems? = null
 )
 
 class OnlineSaleAdminViewModel(
@@ -63,7 +63,7 @@ class OnlineSaleAdminViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val orders = orderRepository.getOrders()
+                val orders = orderRepository.getOrdersWithItems()
                 _uiState.value = _uiState.value.copy(
                     allOrders = orders,
                     isLoading = false,
@@ -82,10 +82,10 @@ class OnlineSaleAdminViewModel(
         }
     }
 
-    private fun loadStockDetails(orders: List<SupabaseOrder>) {
+    private fun loadStockDetails(orders: List<SupabaseOrderWithItems>) {
         viewModelScope.launch {
             try {
-                val stockIds = orders.map { it.stock_id }.distinct()
+                val stockIds = orders.mapNotNull { it.items.firstOrNull()?.id_stock }.distinct()
                 val stockDetailsMap = mutableMapOf<String, SupabaseStock>()
 
                 stockIds.forEach { stockId ->
@@ -105,13 +105,13 @@ class OnlineSaleAdminViewModel(
         _uiState.value = _uiState.value.copy(selectedTabIndex = index)
     }
 
-    fun getOrdersByStatus(status: OrderStatus): List<SupabaseOrder> {
+    fun getOrdersByStatus(status: OrderStatus): List<SupabaseOrderWithItems> {
         return _uiState.value.allOrders.filter {
             it.status.lowercase() == status.toDbString()
         }
     }
 
-    fun getCurrentTabOrders(): List<SupabaseOrder> {
+    fun getCurrentTabOrders(): List<SupabaseOrderWithItems> {
         return when (_uiState.value.selectedTabIndex) {
             0 -> getOrdersByStatus(OrderStatus.PENDING)
             1 -> getOrdersByStatus(OrderStatus.PROCESSING)
@@ -133,7 +133,7 @@ class OnlineSaleAdminViewModel(
         }
     }
 
-    fun showCancelDialog(order: SupabaseOrder) {
+    fun showCancelDialog(order: SupabaseOrderWithItems) {
         _uiState.value = _uiState.value.copy(
             showCancelDialog = true,
             selectedOrderForCancel = order

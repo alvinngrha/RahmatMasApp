@@ -7,7 +7,7 @@ import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.OrderRepository
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.OrderStatus
-import com.example.rahmatmas.data.supabase.db.SupabaseOrder
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.toDbString
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,14 +17,14 @@ import kotlinx.coroutines.launch
 
 data class OrderStatusUiState(
     val isLoading: Boolean = false,
-    val orders: List<SupabaseOrder> = emptyList(),
+    val orders: List<SupabaseOrderWithItems> = emptyList(),
     val userEmail: String = "",
     val userName: String = "",
     val userId: String = "",
     val errorMessage: String? = null,
     val isOnline: Boolean = true,
     val showCancelDialog: Boolean = false,
-    val selectedOrderForCancel: SupabaseOrder? = null
+    val selectedOrderForCancel: SupabaseOrderWithItems? = null
 )
 
 class OrderStatusViewModel(
@@ -91,7 +91,7 @@ class OrderStatusViewModel(
             try {
                 // Use getCurrentUserOrders which should use RLS (Row Level Security)
                 // or getOrdersByUserId with current user ID
-                val orders = orderRepository.getOrdersByUserId(currentUser.id)
+                val orders = orderRepository.getOrdersWithItemsByUserId(currentUser.id)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     orders = orders
@@ -109,7 +109,7 @@ class OrderStatusViewModel(
         loadUserOrders()
     }
 
-    fun showCancelDialog(order: SupabaseOrder) {
+    fun showCancelDialog(order: SupabaseOrderWithItems) {
         _uiState.value = _uiState.value.copy(
             showCancelDialog = true,
             selectedOrderForCancel = order

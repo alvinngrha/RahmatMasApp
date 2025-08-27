@@ -2,6 +2,8 @@ package com.example.rahmatmas.data.repository
 
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderItem
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
@@ -9,13 +11,11 @@ import io.github.jan.supabase.postgrest.rpc
 class OrderRepository {
     private val client = SupabaseModule.client
 
-    suspend fun placeOrder(order: SupabaseOrder) {
+    suspend fun placeOrder(order: SupabaseOrder, item: SupabaseOrderItem) {
         client.postgrest.rpc(
             "place_order",
             mapOf(
                 "p_id" to order.id,
-                "p_stock_id" to order.stock_id,
-                "p_stock_name" to order.stock_name,
                 "p_recipient_name" to order.recipient_name,
                 "p_address" to order.address,
                 "p_phone" to order.phone,
@@ -24,6 +24,30 @@ class OrderRepository {
                 "p_note" to order.note
             )
         )
+
+        client.from("orderitems").insert(item)
+    }
+
+    suspend fun getOrderItems(orderId: String): List<SupabaseOrderItem> {
+        return client.from("orderitems")
+            .select { filter { eq("order_id", orderId) } }
+            .decodeList<SupabaseOrderItem>()
+    }
+
+    suspend fun getOrdersWithItems(): List<SupabaseOrderWithItems> {
+        val orders = getOrders()
+        return orders.map { order ->
+            val items = getOrderItems(order.id)
+            SupabaseOrderWithItems(order, items)
+        }
+    }
+
+    suspend fun getOrdersWithItemsByUserId(userId: String): List<SupabaseOrderWithItems> {
+        val orders = getOrdersByUserId(userId)
+        return orders.map { order ->
+            val items = getOrderItems(order.id)
+            SupabaseOrderWithItems(order, items)
+        }
     }
 
     suspend fun getOrders(): List<SupabaseOrder> {
