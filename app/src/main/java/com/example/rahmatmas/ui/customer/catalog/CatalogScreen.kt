@@ -414,6 +414,7 @@ fun CatalogItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .height(300.dp)
             .shadow(
                 4.dp,
                 shape = RoundedCornerShape(12.dp),

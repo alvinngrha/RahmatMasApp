@@ -20,7 +20,8 @@ data class CheckoutUiState(
     val errorMessage: String? = null,
     val successOrderId: String? = null,
     val userName: String = "",
-    val userEmail: String = ""
+    val userEmail: String = "",
+    val processingOrderId: String? = null
 )
 
 class CheckoutViewModel : ViewModel() {
@@ -73,6 +74,11 @@ class CheckoutViewModel : ViewModel() {
         shippingOption: String
     ) {
         viewModelScope.launch {
+            // Prevent duplicate submissions if an order is already being processed
+            if (_uiState.value.processingOrderId != null) {
+                return@launch
+            }
+
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
             // Get current user
@@ -104,6 +110,9 @@ class CheckoutViewModel : ViewModel() {
 
             try {
                 val orderId = "ORD-${UUID.randomUUID()}"
+                // Set the processing ID to prevent duplicates
+                _uiState.value = _uiState.value.copy(processingOrderId = orderId)
+
                 val currentTime = Instant.now().toString()
 
                 val order = SupabaseOrder(
@@ -128,12 +137,14 @@ class CheckoutViewModel : ViewModel() {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
-                    successOrderId = orderId
+                    successOrderId = orderId,
+                    processingOrderId = null // Reset after success
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Gagal memproses pesanan: ${e.message}"
+                    errorMessage = "Gagal memproses pesanan: ${e.message}",
+                    processingOrderId = null // Reset after failure
                 )
             }
         }
