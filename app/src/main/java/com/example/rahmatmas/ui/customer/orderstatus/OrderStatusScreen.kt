@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.supabase.db.OrderStatus
-import com.example.rahmatmas.data.supabase.db.SupabaseOrder
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.toOrderStatus
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -272,7 +272,7 @@ fun OrderStatusScreen(
 
 @Composable
 private fun CustomerOrderCard(
-    order: SupabaseOrder,
+    order: SupabaseOrderWithItems,
     onCancelClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -343,7 +343,7 @@ private fun CustomerOrderCard(
 
             // Product name
             Text(
-                text = order.stock_name,
+                text = order.items.firstOrNull()?.nama_stock ?: "",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = Color(0xFF2C3E50)
@@ -367,7 +367,7 @@ private fun CustomerOrderCard(
                     OrderInfoRow("Pengiriman", order.shipping_option.replaceFirstChar { it.uppercase() })
 
                     if (!order.note.isNullOrBlank()) {
-                        OrderInfoRow("Catatan", order.note)
+                        OrderInfoRow("Catatan", order.note!!)
                     }
 
                     if (status == OrderStatus.CANCELLED) {
@@ -555,7 +555,7 @@ private fun OrderProgressIndicator(
 
 @Composable
 private fun CustomerCancelOrderDialog(
-    order: SupabaseOrder,
+    order: SupabaseOrderWithItems,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -587,7 +587,7 @@ private fun CustomerCancelOrderDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Pesanan: ${order.stock_name}",
+                    text = "Pesanan: ${order.items.firstOrNull()?.nama_stock}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )

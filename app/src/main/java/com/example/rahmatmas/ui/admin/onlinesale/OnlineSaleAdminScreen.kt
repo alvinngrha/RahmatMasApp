@@ -66,7 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.supabase.db.OrderStatus
-import com.example.rahmatmas.data.supabase.db.SupabaseOrder
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toOrderStatus
 import java.text.SimpleDateFormat
@@ -302,7 +302,7 @@ fun OnlineSaleScreen(
                         items(currentOrders) { order ->
                             OrderCard(
                                 order = order,
-                                stockDetail = viewModel.getStockDetail(order.stock_id),
+                                stockDetail = viewModel.getStockDetail(order.items.firstOrNull()?.id_stock ?: ""),
                                 onStatusUpdate = { newStatus ->
                                     viewModel.updateOrderStatus(order.id, newStatus)
                                 },
@@ -331,7 +331,7 @@ fun OnlineSaleScreen(
 
 @Composable
 private fun OrderCard(
-    order: SupabaseOrder,
+    order: SupabaseOrderWithItems,
     stockDetail: SupabaseStock?,
     onStatusUpdate: (OrderStatus) -> Unit,
     onCancelClick: () -> Unit,
@@ -447,7 +447,7 @@ private fun OrderCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = order.stock_name,
+                        text = order.items.firstOrNull()?.nama_stock ?: "",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = Color(0xFF2C3E50),
@@ -502,7 +502,7 @@ private fun OrderCard(
                     InfoRow("Pengiriman", order.shipping_option.replaceFirstChar { it.uppercase() })
 
                     if (!order.note.isNullOrBlank()) {
-                        InfoRow("Catatan", order.note)
+                        InfoRow("Catatan", order.note!!)
                     }
 
                     if (status == OrderStatus.CANCELLED) {
@@ -686,7 +686,7 @@ private fun InfoRow(
 
 @Composable
 private fun CancelOrderDialog(
-    order: SupabaseOrder,
+    order: SupabaseOrderWithItems,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -718,7 +718,7 @@ private fun CancelOrderDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Pesanan: ${order.stock_name}",
+                    text = "Pesanan: ${order.items.firstOrNull()?.nama_stock}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )

@@ -2,9 +2,11 @@ package com.example.rahmatmas.ui.customer.checkout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.rahmatmas.data.repository.GoldPriceRepository
 import com.example.rahmatmas.data.repository.OrderRepository
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
+import com.example.rahmatmas.data.supabase.db.SupabaseOrderItem
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,7 @@ data class CheckoutUiState(
 class CheckoutViewModel : ViewModel() {
     private val orderRepository = OrderRepository()
     private val supabaseClient = SupabaseModule.client
+    private val goldPriceRepository = GoldPriceRepository()
 
     private val _uiState = MutableStateFlow(CheckoutUiState())
     val uiState: StateFlow<CheckoutUiState> = _uiState.asStateFlow()
@@ -118,8 +121,6 @@ class CheckoutViewModel : ViewModel() {
                 val order = SupabaseOrder(
                     id = orderId,
                     user_id = currentUser.id, // Use authenticated user ID
-                    stock_id = stock.id_barang,
-                    stock_name = stock.nama_barang,
                     recipient_name = name.trim(),
                     address = address.trim(),
                     phone = phone.trim(),
@@ -132,7 +133,27 @@ class CheckoutViewModel : ViewModel() {
                     cancelled_by = null
                 )
 
-                orderRepository.placeOrder(order)
+                val goldPriceResponse = goldPriceRepository.getGoldPrice()
+                val hargaEmas = goldPriceResponse.body()?.data?.firstOrNull()?.sell?.toDouble() ?: 0.0
+                val kadarPersen = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
+                val hargaDasarPerGram = (hargaEmas * kadarPersen / 100)
+                val totalHarga = hargaDasarPerGram * stock.berat_emas
+
+                val orderItem = SupabaseOrderItem(
+                    orderitem_id = "ITEM-${UUID.randomUUID()}",
+                    order_id = orderId,
+                    id_stock = stock.id_barang,
+                    nama_stock = stock.nama_barang,
+                    jumlah_order = 1,
+                    kadar_emas = stock.kadar_emas,
+                    kadar_persen = stock.kadar_persen,
+                    berat_emas = stock.berat_emas,
+                    ongkos_per_gram = stock.ongkos_per_gram,
+                    harga_emas_hariini = hargaEmas,
+                    total_harga = totalHarga
+                )
+
+                orderRepository.placeOrder(order, orderItem)
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
