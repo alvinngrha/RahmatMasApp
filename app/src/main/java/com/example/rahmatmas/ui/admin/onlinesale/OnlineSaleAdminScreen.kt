@@ -303,7 +303,9 @@ fun OnlineSaleScreen(
                         items(currentOrders) { order ->
                             OrderCard(
                                 order = order,
-                                stockDetail = viewModel.getStockDetail(order.items.firstOrNull()?.id_stock ?: ""),
+                                stockDetail = viewModel.getStockDetail(
+                                    order.items.firstOrNull()?.id_stock ?: ""
+                                ),
                                 onStatusUpdate = { newStatus ->
                                     viewModel.updateOrderStatus(order.id, newStatus)
                                 },
@@ -447,16 +449,17 @@ private fun OrderCard(
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = order.items.firstOrNull()?.nama_stock ?: "",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = Color(0xFF2C3E50),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
                     order.items.firstOrNull()?.let { item ->
+                        Text(
+                            text = order.items.firstOrNull()?.nama_stock ?: "",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color(0xFF2C3E50),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Kadar: ${item.kadar_emas} (${item.kadar_persen})",

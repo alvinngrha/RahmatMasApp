@@ -411,6 +411,11 @@ private fun CustomerOrderCard(
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
+                        Text(
+                            text = "Ongkos/gram: ${formatCurrency(item.ongkos_per_gram)}",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
