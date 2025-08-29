@@ -69,6 +69,7 @@ import com.example.rahmatmas.data.supabase.db.OrderStatus
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toOrderStatus
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -476,7 +477,23 @@ private fun OrderCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Pricing Info
+            order.items.firstOrNull()?.let { item ->
+                Text(
+                    text = "Harga emas hari ini: ${formatCurrency(item.harga_emas_hariini)}",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "Total harga: ${formatCurrency(order.items.sumOf { it.total_harga })}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = Color(0xFF2C3E50)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Customer Info
             Card(
@@ -801,4 +818,9 @@ private fun formatDate(dateString: String?): String {
     } catch (e: Exception) {
         dateString
     }
+}
+
+private fun formatCurrency(amount: Double): String {
+    val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+    return formatter.format(amount).replace("Rp", "Rp ")
 }

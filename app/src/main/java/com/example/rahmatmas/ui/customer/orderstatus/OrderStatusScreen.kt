@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.customer.orderstatus
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,8 +50,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +64,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.supabase.db.OrderStatus
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
+import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toOrderStatus
+import coil.compose.rememberAsyncImagePainter
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -246,8 +252,10 @@ fun OrderStatusScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.orders) { order ->
+                        val stockDetail = viewModel.getStockDetail(order.items.firstOrNull()?.id_stock ?: "")
                         CustomerOrderCard(
                             order = order,
+                            stockDetail = stockDetail,
                             onCancelClick = {
                                 viewModel.showCancelDialog(order)
                             }
@@ -273,6 +281,7 @@ fun OrderStatusScreen(
 @Composable
 private fun CustomerOrderCard(
     order: SupabaseOrderWithItems,
+    stockDetail: SupabaseStock?,
     onCancelClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -341,11 +350,78 @@ private fun CustomerOrderCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Product name
+            // Product info
+            Row(modifier = Modifier.fillMaxWidth()) {
+                val item = order.items.firstOrNull()
+                if (stockDetail?.photo_path != null) {
+                    Card(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Image(
+                            painter = rememberAsyncImagePainter(stockDetail.photo_path),
+                            contentDescription = "Product Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF8F9FA)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.logo_inventory),
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item?.nama_stock ?: "",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF2C3E50)
+                    )
+
+                    if (item != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Jumlah: ${item.jumlah_order}",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = "Kadar: ${item.kadar_emas} (${item.kadar_persen})",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = "Berat: ${item.berat_emas}g",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val totalPrice = order.items.sumOf { it.total_harga }
             Text(
-                text = order.items.firstOrNull()?.nama_stock ?: "",
+                text = "Total Harga: ${formatCurrency(totalPrice)}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 color = Color(0xFF2C3E50)
             )
 
@@ -656,4 +732,9 @@ private fun formatDate(dateString: String?): String {
     } catch (e: Exception) {
         dateString
     }
+}
+
+private fun formatCurrency(amount: Double): String {
+    val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+    return formatter.format(amount).replace("Rp", "Rp ")
 }

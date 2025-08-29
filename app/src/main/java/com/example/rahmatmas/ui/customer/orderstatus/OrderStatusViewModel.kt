@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.OrderRepository
+import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.OrderStatus
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
+import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toDbString
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +26,8 @@ data class OrderStatusUiState(
     val errorMessage: String? = null,
     val isOnline: Boolean = true,
     val showCancelDialog: Boolean = false,
-    val selectedOrderForCancel: SupabaseOrderWithItems? = null
+    val selectedOrderForCancel: SupabaseOrderWithItems? = null,
+    val stockDetails: Map<String, SupabaseStock> = emptyMap()
 )
 
 class OrderStatusViewModel(
@@ -33,6 +36,7 @@ class OrderStatusViewModel(
 
     private val orderRepository = OrderRepository()
     private val networkMonitor = NetworkMonitor(context)
+    private val stockRepository = StockRepository(networkMonitor, context)
     private val supabaseClient = SupabaseModule.client
 
     private val _uiState = MutableStateFlow(OrderStatusUiState())
@@ -96,6 +100,9 @@ class OrderStatusViewModel(
                     isLoading = false,
                     orders = orders
                 )
+
+                // Load stock details for each order
+                loadStockDetails(orders)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -107,6 +114,27 @@ class OrderStatusViewModel(
 
     fun refreshOrders() {
         loadUserOrders()
+    }
+
+    private fun loadStockDetails(orders: List<SupabaseOrderWithItems>) {
+        viewModelScope.launch {
+            try {
+                val stockIds = orders.mapNotNull { it.items.firstOrNull()?.id_stock }.distinct()
+                val stockDetailsMap = mutableMapOf<String, SupabaseStock>()
+                stockIds.forEach { stockId ->
+                    stockRepository.getStockById(stockId)?.let { stock ->
+                        stockDetailsMap[stockId] = stock
+                    }
+                }
+                _uiState.value = _uiState.value.copy(stockDetails = stockDetailsMap)
+            } catch (e: Exception) {
+                // Ignore errors in loading stock details
+            }
+        }
+    }
+
+    fun getStockDetail(stockId: String): SupabaseStock? {
+        return _uiState.value.stockDetails[stockId]
     }
 
     fun showCancelDialog(order: SupabaseOrderWithItems) {
