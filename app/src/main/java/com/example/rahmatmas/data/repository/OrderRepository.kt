@@ -4,9 +4,18 @@ import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderItem
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
+import com.example.rahmatmas.data.supabase.notification.PushNotificationRequest
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.decodeRecord
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.mapNotNull
 
 class OrderRepository {
     private val client = SupabaseModule.client
@@ -26,6 +35,12 @@ class OrderRepository {
         )
 
         client.from("orderitems").insert(item)
+
+        sendPushNotification(
+            userId = "admin",
+            title = "Pesanan Baru",
+            body = "Pesanan baru dari ${order.recipient_name}"
+        )
     }
 
     suspend fun getOrderItems(orderId: String): List<SupabaseOrderItem> {
@@ -81,6 +96,16 @@ class OrderRepository {
         }
 
         client.postgrest.rpc("update_order_status", params)
+
+        val updatedOrder = getOrderById(id)
+        val userId = updatedOrder?.user_id
+        if (userId != null) {
+            sendPushNotification(
+                userId = userId,
+                title = "Status Pesanan",
+                body = "Status pesanan kamu: $status"
+            )
+        }
     }
 
     suspend fun getOrderById(id: String): SupabaseOrder? {
@@ -88,15 +113,6 @@ class OrderRepository {
             .select()
             .decodeList<SupabaseOrder>()
             .find { it.id == id }
-    }
-
-    // For customer to view their orders
-    suspend fun getOrdersByPhone(phone: String): List<SupabaseOrder> {
-        return client.from("orders")
-            .select()
-            .decodeList<SupabaseOrder>()
-            .filter { it.phone == phone }
-            .sortedByDescending { it.created_at }
     }
 
     // Get orders by authenticated user ID
@@ -115,5 +131,30 @@ class OrderRepository {
             .select()
             .decodeList<SupabaseOrder>()
             .sortedByDescending { it.created_at }
+    }
+
+    suspend fun observeNewOrders(): Flow<SupabaseOrder> {
+        val channel = client.channel("public:orders")
+        channel.subscribe()
+        return channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+            table = "orders"
+        }.mapNotNull { change ->
+            change.decodeRecord<SupabaseOrder>()
+        }
+    }
+
+    suspend fun observeOrderStatus(userId: String): Flow<SupabaseOrder> {
+        val channel = client.channel("public:orders")
+        channel.subscribe()
+        return channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+            table = "orders"
+        }.mapNotNull { change ->
+            change.decodeRecord<SupabaseOrder>()
+        }.filter { it.user_id == userId }
+    }
+
+    private suspend fun sendPushNotification(userId: String, title: String, body: String) {
+        val payload = PushNotificationRequest(userId = userId, title = title, body = body)
+        client.functions.invoke("send-push", body = payload)
     }
 }

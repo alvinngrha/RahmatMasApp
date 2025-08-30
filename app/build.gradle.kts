@@ -5,6 +5,7 @@ plugins {
     kotlin("plugin.serialization") version "2.0.0"
     id("kotlin-kapt")
     id("kotlinx-serialization")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -107,6 +108,16 @@ dependencies {
     //viewmodel compoee
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
 
+    //firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
+
+    // TODO: Add the dependencies for Firebase products you want to use
+    // When using the BoM, don't specify versions in Firebase dependencies
+    implementation("com.google.firebase:firebase-analytics")
+
+
     //google
     implementation("androidx.credentials:credentials:1.5.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
@@ -119,6 +130,7 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:auth-kt")
     implementation("io.github.jan-tennert.supabase:realtime-kt")
     implementation("io.github.jan-tennert.supabase:storage-kt:3.1.1")
+    implementation("io.github.jan-tennert.supabase:functions-kt:3.1.1")
 
     // Serialization untuk Supabase
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")

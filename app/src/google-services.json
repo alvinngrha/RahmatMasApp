@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "825947182413",
+    "project_id": "sirahmatmas-app",
+    "storage_bucket": "sirahmatmas-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825947182413:android:9a4953dafb231b693e1304",
+        "android_client_info": {
+          "package_name": "com.example.rahmatmas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeEpbO5sS8IYgPiNV2GwLXmJcNBuveDtk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

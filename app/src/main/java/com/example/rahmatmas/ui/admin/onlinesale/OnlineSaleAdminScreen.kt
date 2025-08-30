@@ -102,6 +102,13 @@ fun OnlineSaleScreen(
         }
     }
 
+    // Listen for new orders and show notification
+    LaunchedEffect(Unit) {
+        viewModel.newOrders.collect { order ->
+            snackbarHostState.showSnackbar("Pesanan baru: ${order.id}")
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {

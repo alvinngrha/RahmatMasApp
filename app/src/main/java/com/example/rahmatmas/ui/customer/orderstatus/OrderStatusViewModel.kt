@@ -8,12 +8,16 @@ import com.example.rahmatmas.data.repository.OrderRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.OrderStatus
+import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toDbString
 import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -42,8 +46,12 @@ class OrderStatusViewModel(
     private val _uiState = MutableStateFlow(OrderStatusUiState())
     val uiState: StateFlow<OrderStatusUiState> = _uiState.asStateFlow()
 
+    private val _orderUpdates = MutableSharedFlow<SupabaseOrder>(extraBufferCapacity = 1)
+    val orderUpdates: SharedFlow<SupabaseOrder> = _orderUpdates.asSharedFlow()
+
     init {
         loadUserData()
+        startOrderStatusListener()
         // Monitor network status
         viewModelScope.launch {
             networkMonitor.isOnline.collect { isOnline ->
@@ -53,6 +61,16 @@ class OrderStatusViewModel(
                         errorMessage = "Tidak ada koneksi internet"
                     )
                 }
+            }
+        }
+    }
+
+    private fun startOrderStatusListener() {
+        viewModelScope.launch {
+            val currentUser = supabaseClient.auth.currentUserOrNull() ?: return@launch
+            orderRepository.observeOrderStatus(currentUser.id).collect { order ->
+                _orderUpdates.emit(order)
+                refreshOrders()
             }
         }
     }
@@ -187,15 +205,5 @@ class OrderStatusViewModel(
 
     fun clearErrorMessage() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
-    }
-
-    // Remove the search methods since we're now auto-loading user orders
-    // Keep for backward compatibility if needed elsewhere
-    fun searchOrders(phoneNumber: String) {
-        // This method is no longer needed but kept for compatibility
-    }
-
-    fun clearSearch() {
-        // This method is no longer needed but kept for compatibility
     }
 }

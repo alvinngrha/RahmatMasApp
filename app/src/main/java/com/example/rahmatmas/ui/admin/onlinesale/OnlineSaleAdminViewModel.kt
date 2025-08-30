@@ -7,11 +7,15 @@ import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.OrderRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.db.OrderStatus
+import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.data.supabase.db.toDbString
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -37,6 +41,9 @@ class OnlineSaleAdminViewModel(
     private val _uiState = MutableStateFlow(OnlineSaleUiState())
     val uiState: StateFlow<OnlineSaleUiState> = _uiState.asStateFlow()
 
+    private val _newOrders = MutableSharedFlow<SupabaseOrder>(extraBufferCapacity = 1)
+    val newOrders: SharedFlow<SupabaseOrder> = _newOrders.asSharedFlow()
+
     val tabTitles = listOf(
         "Menunggu (${getOrdersByStatus(OrderStatus.PENDING).size})",
         "Diproses (${getOrdersByStatus(OrderStatus.PROCESSING).size})",
@@ -53,6 +60,13 @@ class OnlineSaleAdminViewModel(
                 if (isOnline) {
                     loadOrders()
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            orderRepository.observeNewOrders().collect { order ->
+                _newOrders.emit(order)
+                loadOrders()
             }
         }
     }

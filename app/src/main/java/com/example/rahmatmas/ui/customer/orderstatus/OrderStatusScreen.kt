@@ -99,6 +99,13 @@ fun OrderStatusScreen(
         }
     }
 
+    // Listen for order status updates
+    LaunchedEffect(Unit) {
+        viewModel.orderUpdates.collect { order ->
+            snackbarHostState.showSnackbar("Status pesanan diperbarui: ${order.status}")
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
