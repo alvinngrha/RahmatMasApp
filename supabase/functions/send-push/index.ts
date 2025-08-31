@@ -4,15 +4,40 @@ import { GoogleAuth } from "npm:google-auth-library@8.9.0";
 serve(async (req)=>{
   try {
     const { userId, title, body } = await req.json();
-    const supabaseUrl = Deno.env.get("https://awhyvidcoelagcgwkqks.supabase.co") ?? "";
-    const serviceRoleKey = Deno.env.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3aHl2aWRjb2VsYWdjZ3drcWtzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjIxMzQyNSwiZXhwIjoyMDY3Nzg5NDI1fQ.YtyrUXDwOPTlAZrV5xvxATj8wmZxNZ8DwZXkwyCqsS4") ?? "";
-    const projectId = Deno.env.get("sirahmatmas-app") ?? "";
-    const serviceAccountJson = Deno.env.get("sirahmatmas-app-firebase-adminsdk-fbsvc-95eefcab8c.json") ?? "{}";
+    // Determine the Supabase project URL. Prefer the `SUPABASE_URL` secret but
+    // fall back to the request headers (`x-forwarded-host` / `host`) so the
+    // function still works even when the secret is missing.
+    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+    const proto = req.headers.get("x-forwarded-proto") ?? "https";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || (host ? `${proto}://${host}` : "");
+    if (!supabaseUrl) throw new Error("SUPABASE_URL is required");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    // Be flexible with env names to reduce setup friction
+    const projectId =
+      Deno.env.get("Firebase_Project_id") ||
+      Deno.env.get("FIREBASE_PROJECT_ID") ||
+      Deno.env.get("firebase_project_id") ||
+      "";
+    const serviceAccountJson =
+      Deno.env.get("Service_Acount_Json") || // original (typo kept for backward compat)
+      Deno.env.get("SERVICE_ACCOUNT_JSON") ||
+      Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") ||
+      "{}";
     const serviceAccount = JSON.parse(serviceAccountJson);
     const supabase = createClient(supabaseUrl, serviceRoleKey);
     const { data: tokens, error } = await supabase.from("device_tokens").select("token").eq("user_id", userId);
     if (error) {
       throw error;
+    }
+    // Validate Firebase credentials presence for clearer errors
+    const missing: string[] = [];
+    if (!projectId) missing.push("Firebase_Project_id/FIREBASE_PROJECT_ID");
+    if (!serviceAccount?.client_email) missing.push("client_email in Service_Account_JSON");
+    if (!serviceAccount?.private_key) missing.push("private_key in Service_Account_JSON");
+    if (missing.length) {
+      return new Response(JSON.stringify({
+        error: `Firebase configuration is incomplete: missing ${missing.join(", ")}`
+      }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
     const auth = new GoogleAuth({
       credentials: serviceAccount,

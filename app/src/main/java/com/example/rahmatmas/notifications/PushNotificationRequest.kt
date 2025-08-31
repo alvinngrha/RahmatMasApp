@@ -1,4 +1,4 @@
-package com.example.rahmatmas.data.supabase.notification
+package com.example.rahmatmas.notifications
 
 import kotlinx.serialization.Serializable
 

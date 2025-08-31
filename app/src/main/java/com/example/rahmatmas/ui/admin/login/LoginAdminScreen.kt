@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.datastore.AdminAuthManager
 import com.example.rahmatmas.data.supabase.AuthResponse
+import com.example.rahmatmas.notifications.FcmTokenRegistrar
 
 @Composable
 fun LoginAdminScreen(
@@ -69,6 +70,8 @@ fun LoginAdminScreen(
         try {
             when (loginState) {
                 is AuthResponse.Success -> {
+                    // Register this device under the admin broadcast group
+                    FcmTokenRegistrar.registerForAdminNotifications()
                     onLoginSuccess()
                     viewModel.resetLoginState()
                     viewModel.clearForm()

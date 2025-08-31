@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
+import com.example.rahmatmas.notifications.FcmTokenRegistrar
 
 @Composable
 fun LoginCustomerScreen(
@@ -49,6 +50,8 @@ fun LoginCustomerScreen(
     // Navigasi otomatis jika sudah login
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
+            // Register FCM token for the authenticated Supabase user
+            FcmTokenRegistrar.registerForCurrentUser()
             onLoginSuccess()
         }
     }
@@ -61,7 +64,7 @@ fun LoginCustomerScreen(
             modifier = Modifier
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
                 painter = painterResource(id = R.drawable.toko_perhiasan),
@@ -164,4 +167,3 @@ fun LoginCustomerScreen(
         }
     }
 }
-

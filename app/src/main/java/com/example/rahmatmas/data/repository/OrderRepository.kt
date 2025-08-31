@@ -4,7 +4,7 @@ import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderItem
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderWithItems
-import com.example.rahmatmas.data.supabase.notification.PushNotificationRequest
+import com.example.rahmatmas.notifications.PushNotificationRequest
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
@@ -13,6 +13,7 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.postgresChangeFlow
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
@@ -30,14 +31,16 @@ class OrderRepository {
                 "p_phone" to order.phone,
                 "p_shipping_option" to order.shipping_option,
                 "p_status" to order.status,
-                "p_note" to order.note
+                "p_note" to order.note,
+                "p_user_id" to order.user_id // Add user_id parameter
             )
         )
 
         client.from("orderitems").insert(item)
 
+        // Send notification to all admins (use special admin identifier)
         sendPushNotification(
-            userId = "admin",
+            userId = "admin_notifications",
             title = "Pesanan Baru",
             body = "Pesanan baru dari ${order.recipient_name}"
         )
@@ -102,8 +105,8 @@ class OrderRepository {
         if (userId != null) {
             sendPushNotification(
                 userId = userId,
-                title = "Status Pesanan",
-                body = "Status pesanan kamu: $status"
+                title = "Status Pesanan Diperbarui",
+                body = "Status pesanan Anda: $status"
             )
         }
     }
@@ -154,7 +157,13 @@ class OrderRepository {
     }
 
     private suspend fun sendPushNotification(userId: String, title: String, body: String) {
-        val payload = PushNotificationRequest(userId = userId, title = title, body = body)
-        client.functions.invoke("send-push", body = payload)
+        try {
+            val payload = PushNotificationRequest(userId = userId, title = title, body = body)
+            val result = client.functions.invoke("send-push", body = payload)
+            Log.d("PushNotification", "send-push response: $result")
+        } catch (e: Exception) {
+            // Log the error but don't let it fail the main operation
+            Log.e("PushNotification", "Failed to send push notification", e)
+        }
     }
 }

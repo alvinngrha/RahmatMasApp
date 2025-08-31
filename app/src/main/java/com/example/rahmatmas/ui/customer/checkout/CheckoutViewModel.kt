@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.customer.checkout
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.repository.GoldPriceRepository
@@ -79,40 +80,43 @@ class CheckoutViewModel : ViewModel() {
         viewModelScope.launch {
             // Prevent duplicate submissions if an order is already being processed
             if (_uiState.value.processingOrderId != null) {
+                Log.w("CheckoutViewModel", "Order already being processed, ignoring duplicate request")
                 return@launch
             }
 
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-            // Get current user
-            val currentUser = supabaseClient.auth.currentUserOrNull()
-            if (currentUser == null) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Anda harus login terlebih dahulu"
-                )
-                return@launch
-            }
-
-            // Validate inputs
-            if (name.isBlank() || address.isBlank() || phone.isBlank()) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Semua field wajib diisi (kecuali catatan)"
-                )
-                return@launch
-            }
-
-            if (phone.length < 10) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Nomor HP tidak valid"
-                )
-                return@launch
-            }
-
             try {
+                // Get current user
+                val currentUser = supabaseClient.auth.currentUserOrNull()
+                if (currentUser == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Anda harus login terlebih dahulu"
+                    )
+                    return@launch
+                }
+
+                // Validate inputs
+                if (name.isBlank() || address.isBlank() || phone.isBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Semua field wajib diisi (kecuali catatan)"
+                    )
+                    return@launch
+                }
+
+                if (phone.length < 10) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Nomor HP tidak valid (minimal 10 digit)"
+                    )
+                    return@launch
+                }
+
                 val orderId = "ORD-${UUID.randomUUID()}"
+                Log.d("CheckoutViewModel", "Creating order with ID: $orderId")
+
                 // Set the processing ID to prevent duplicates
                 _uiState.value = _uiState.value.copy(processingOrderId = orderId)
 
@@ -133,11 +137,19 @@ class CheckoutViewModel : ViewModel() {
                     cancelled_by = null
                 )
 
+                Log.d("CheckoutViewModel", "Fetching gold price...")
                 val goldPriceResponse = goldPriceRepository.getGoldPrice()
                 val hargaEmas = goldPriceResponse.body()?.data?.firstOrNull()?.sell?.toDouble() ?: 0.0
+
+                if (hargaEmas <= 0) {
+                    throw Exception("Tidak dapat memperoleh harga emas hari ini")
+                }
+
                 val kadarPersen = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
                 val hargaDasarPerGram = (hargaEmas * kadarPersen / 100)
                 val totalHarga = hargaDasarPerGram * stock.berat_emas
+
+                Log.d("CheckoutViewModel", "Calculated total price: $totalHarga")
 
                 val orderItem = SupabaseOrderItem(
                     orderitem_id = "ITEM-${UUID.randomUUID()}",
@@ -153,8 +165,10 @@ class CheckoutViewModel : ViewModel() {
                     total_harga = totalHarga
                 )
 
+                Log.d("CheckoutViewModel", "Placing order in database...")
                 orderRepository.placeOrder(order, orderItem)
 
+                Log.d("CheckoutViewModel", "Order placed successfully!")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
@@ -162,6 +176,7 @@ class CheckoutViewModel : ViewModel() {
                     processingOrderId = null // Reset after success
                 )
             } catch (e: Exception) {
+                Log.e("CheckoutViewModel", "Error placing order", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = "Gagal memproses pesanan: ${e.message}",
