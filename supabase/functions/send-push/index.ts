@@ -47,8 +47,9 @@ serve(async (req)=>{
     });
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
-    await Promise.all(tokens?.map(async ({ token })=>{
-      await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+    const results: Array<{ token: string; ok: boolean; status: number; body?: unknown }> = [];
+    await Promise.all(tokens?.map(async ({ token }) => {
+      const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,16 +58,25 @@ serve(async (req)=>{
         body: JSON.stringify({
           message: {
             token,
-            notification: {
-              title,
-              body
+            notification: { title, body },
+            android: {
+              priority: "HIGH",
+              notification: {
+                channel_id: "rahmatmas_push"
+              }
             }
           }
         })
       });
+      let json: unknown = undefined;
+      try { json = await res.json(); } catch (_) {}
+      results.push({ token, ok: res.ok, status: res.status, body: json });
     }) ?? []);
+    const failures = results.filter(r => !r.ok);
     return new Response(JSON.stringify({
-      success: true
+      success: failures.length === 0,
+      sent: results.length,
+      failures
     }), {
       headers: {
         "Content-Type": "application/json"

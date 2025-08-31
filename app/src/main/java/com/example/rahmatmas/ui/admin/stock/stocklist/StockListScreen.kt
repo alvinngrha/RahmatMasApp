@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -67,6 +68,7 @@ import java.util.Locale
 fun StockListScreen(
     onAddStockClick: () -> Unit,
     onBackClick: () -> Unit,
+    onEditStockClick: (SupabaseStock) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -276,6 +278,7 @@ fun StockListScreen(
                     items(stocks) { stock ->
                         StockItem(
                             stock = stock,
+                            onEditClick = { onEditStockClick(stock) },
                             onDeleteClick = { viewModel.deleteStock(stock.id_barang) }
                         )
                     }
@@ -288,6 +291,7 @@ fun StockListScreen(
 @Composable
 fun StockItem(
     stock: SupabaseStock,
+    onEditClick: (SupabaseStock) -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -389,11 +393,27 @@ fun StockItem(
                 }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Action button
+            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
+                OutlinedButton(
+                    onClick = { onEditClick(stock) },
+                    modifier = Modifier.width(120.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Edit",
+                        fontSize = 12.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 OutlinedButton(
                     onClick = onDeleteClick,
                     modifier = Modifier.width(120.dp)

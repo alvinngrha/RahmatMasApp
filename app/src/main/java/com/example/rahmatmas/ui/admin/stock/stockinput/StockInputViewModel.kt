@@ -6,10 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.StockRepository
+import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 data class StockInputUiState(
@@ -21,11 +25,13 @@ data class StockInputUiState(
     val beratEmas: String = "",
     val ongkosPerGram: String = "", // Changed from ongkosPerGram
     val selectedPhotoUri: Uri? = null,
+    val existingPhotoUrl: String? = null,
     val isLoading: Boolean = false,
     val isOnline: Boolean = true,
     val showSuccessDialog: Boolean = false,
     val errorMessage: String? = null,
-    val validationErrors: Map<String, String> = emptyMap()
+    val validationErrors: Map<String, String> = emptyMap(),
+    val isEdit: Boolean = false
     // Removed: goldPricePerGram, hargaDasarPerGram, totalHargaBarang
 )
 
@@ -38,6 +44,7 @@ class StockInputViewModel(
         networkMonitor = networkMonitor,
         context = context
     )
+    private val photoUploadRepository = com.example.rahmatmas.data.repository.PhotoUploadRepository(context)
 
     private val _uiState = MutableStateFlow(StockInputUiState())
     val uiState: StateFlow<StockInputUiState> = _uiState.asStateFlow()
@@ -109,6 +116,20 @@ class StockInputViewModel(
         _uiState.value = _uiState.value.copy(selectedPhotoUri = uri)
     }
 
+    fun loadForEdit(stock: com.example.rahmatmas.data.supabase.db.SupabaseStock) {
+        _uiState.value = _uiState.value.copy(
+            id_barang = stock.id_barang,
+            namaBarang = stock.nama_barang,
+            jumlahStok = stock.jumlah_stok.toString(),
+            kadarEmas = stock.kadar_emas,
+            kadarPersen = stock.kadar_persen,
+            beratEmas = stock.berat_emas.toString(),
+            ongkosPerGram = stock.ongkos_per_gram.toString(),
+            existingPhotoUrl = stock.photo_path,
+            isEdit = true
+        )
+    }
+
     private fun validateInputs(): Map<String, String> {
         val errors = mutableMapOf<String, String>()
         val currentState = _uiState.value
@@ -163,6 +184,10 @@ class StockInputViewModel(
 
     fun saveStock() {
         viewModelScope.launch {
+            if (_uiState.value.isEdit) {
+                updateExistingStock()
+                return@launch
+            }
             val validationErrors = validateInputs()
             if (validationErrors.isNotEmpty()) {
                 _uiState.value = _uiState.value.copy(validationErrors = validationErrors)
@@ -212,6 +237,78 @@ class StockInputViewModel(
                     errorMessage = "Terjadi kesalahan: ${e.message}"
                 )
             }
+        }
+    }
+
+    private suspend fun updateExistingStock() {
+        val validationErrors = validateInputs()
+        if (validationErrors.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(validationErrors = validationErrors)
+            if (validationErrors.containsKey("network")) {
+                _uiState.value = _uiState.value.copy(errorMessage = validationErrors["network"])
+            }
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(
+            isLoading = true,
+            errorMessage = null
+        )
+
+        val currentState = _uiState.value
+
+        try {
+            // Determine photo_path
+            var photoUrl: String? = currentState.existingPhotoUrl
+            val newPhoto = currentState.selectedPhotoUri
+            if (newPhoto != null) {
+                val uploadRes = photoUploadRepository.uploadPhotoStock(newPhoto, currentState.id_barang)
+                uploadRes.onSuccess { url -> photoUrl = url }
+                    .onFailure { e ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = "Gagal mengunggah foto: ${e.message}"
+                        )
+                        return
+                    }
+            }
+
+            val updated = SupabaseStock(
+                id_barang = currentState.id_barang,
+                nama_barang = currentState.namaBarang,
+                jumlah_stok = currentState.jumlahStok.toInt(),
+                kadar_emas = currentState.kadarEmas,
+                kadar_persen = currentState.kadarPersen,
+                berat_emas = currentState.beratEmas.toDouble(),
+                ongkos_per_gram = currentState.ongkosPerGram.toDouble(),
+                photo_path = photoUrl,
+                updated_at = SimpleDateFormat(
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                    Locale.getDefault()
+                ).format(Date())
+            )
+
+            val result = stockRepository.updateStock(updated)
+
+            result.fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        showSuccessDialog = true
+                    )
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Gagal memperbarui stok: ${e.message}"
+                    )
+                }
+            )
+        } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                errorMessage = "Terjadi kesalahan: ${e.message}"
+            )
         }
     }
 

@@ -22,9 +22,10 @@ object NotificationUtils {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "RahmatMas Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Order updates and admin alerts"
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
@@ -65,4 +66,3 @@ object NotificationUtils {
         }
     }
 }
-

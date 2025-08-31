@@ -206,22 +206,30 @@ fun RahmatMasApp(
                 }
 
                 composable("stockinputadmin") {
+                    val stockToEdit = navController.previousBackStackEntry?.savedStateHandle?.get<SupabaseStock>("editStock")
                     StockInputScreen(
                         onBackClick = {
                             navController.navigateUp()
-                        }
+                        },
+                        stockToEdit = stockToEdit
                     )
                 }
 
                 composable("stocklistadmin") {
                     StockListScreen(
                         onAddStockClick = {
+                            // Clear any previous edit stock key to ensure fresh create mode
+                            navController.currentBackStackEntry?.savedStateHandle?.remove<SupabaseStock>("editStock")
                             navController.navigate("stockinputadmin") {
                                 launchSingleTop = true
                             }
                         },
                         onBackClick = {
                             navController.navigateUp()
+                        },
+                        onEditStockClick = { stock ->
+                            navController.currentBackStackEntry?.savedStateHandle?.set("editStock", stock)
+                            navController.navigate("stockinputadmin") { launchSingleTop = true }
                         }
                     )
                 }

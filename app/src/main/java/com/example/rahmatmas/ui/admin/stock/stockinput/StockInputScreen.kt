@@ -78,6 +78,7 @@ import java.io.File
 @Composable
 fun StockInputScreen(
     onBackClick: () -> Unit,
+    stockToEdit: com.example.rahmatmas.data.supabase.db.SupabaseStock? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -86,6 +87,11 @@ fun StockInputScreen(
     )
 
     val uiState by viewModel.uiState.collectAsState()
+
+    // Load edit data if provided
+    LaunchedEffect(stockToEdit) {
+        stockToEdit?.let { viewModel.loadForEdit(it) }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // State untuk menyimpan URI foto kamera
@@ -162,7 +168,7 @@ fun StockInputScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Input Stok") },
+                title = { Text(if (uiState.isEdit) "Edit Stok" else "Input Stok") },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFFFF9800),
                     titleContentColor = Color.White
@@ -234,6 +240,13 @@ fun StockInputScreen(
                                 Image(
                                     painter = rememberAsyncImagePainter(uiState.selectedPhotoUri),
                                     contentDescription = "Selected Photo",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else if (uiState.existingPhotoUrl != null) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(uiState.existingPhotoUrl),
+                                    contentDescription = "Existing Photo",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
@@ -464,7 +477,7 @@ fun StockInputScreen(
                         Text("Menyimpan...")
                     } else {
                         Text(
-                            text = if (uiState.isOnline) "Simpan Stok" else "Memerlukan Koneksi Internet",
+                            text = if (uiState.isOnline) (if (uiState.isEdit) "Update Stok" else "Simpan Stok") else "Memerlukan Koneksi Internet",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )

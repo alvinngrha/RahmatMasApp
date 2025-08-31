@@ -123,6 +123,38 @@ class StockListViewModel(
         loadStocks()
     }
 
+    fun updateStock(stock: SupabaseStock) {
+        viewModelScope.launch {
+            if (!_uiState.value.isOnline) {
+                _uiState.value = _uiState.value.copy(
+                    snackbarMessage = "Tidak ada koneksi internet"
+                )
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            val result = stockRepository.updateStock(stock)
+
+            result.fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        snackbarMessage = "Stok berhasil diperbarui"
+                    )
+                    loadStocks()
+                },
+                onFailure = { exception ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Gagal memperbarui stok: ${exception.message}",
+                        snackbarMessage = "Gagal memperbarui stok"
+                    )
+                }
+            )
+        }
+    }
+
     fun deleteStock(stockId: String) {
         viewModelScope.launch {
             if (!_uiState.value.isOnline) {
