@@ -51,6 +51,12 @@ android {
             "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3aHl2aWRjb2VsYWdjZ3drcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyMTM0MjUsImV4cCI6MjA2Nzc4OTQyNX0.jVTeO5bBkjcI5vRc_48UpViYLNiOt50TjKRTqQ51Y-c\""
         )
 
+        buildConfigField(
+            "String",
+            "GOOGLE_WEB_CLIENT_ID",
+            "\"426296330523-f7h31tm1o4ip4hjamhnspa8vij8t18is.apps.googleusercontent.com\""
+        )
+
     }
 
     buildTypes {
