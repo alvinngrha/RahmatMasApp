@@ -33,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.rahmatmas.data.datastore.AdminAuthManager
 import com.example.rahmatmas.data.supabase.authgoogle.AuthManager
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
+import com.example.rahmatmas.ui.admin.financialreport.FinancialReportAdminScreen
 import com.example.rahmatmas.ui.admin.home.HomeAdminScreen
 import com.example.rahmatmas.ui.admin.login.LoginAdminScreen
 import com.example.rahmatmas.ui.admin.login.LoginAdminViewModel
@@ -202,6 +203,9 @@ fun RahmatMasApp(
                                 launchSingleTop = true
                             }
                         },
+                        onGoToFinancialReport = {
+                            navController.navigate("financialreportadmin") { launchSingleTop = true }
+                        }
                     )
                 }
 
@@ -248,6 +252,12 @@ fun RahmatMasApp(
 
                 composable("onlinesaleadmin") {
                     OnlineSaleScreen()
+                }
+
+                composable("financialreportadmin") {
+                    FinancialReportAdminScreen(
+                        onBackClick = { navController.navigateUp() }
+                    )
                 }
 
                 composable("profileadmin") {

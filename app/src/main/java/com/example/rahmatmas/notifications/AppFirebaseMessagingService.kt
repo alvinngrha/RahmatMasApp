@@ -21,6 +21,13 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
                 val client = SupabaseModule.client
                 val userId = client.auth.currentSessionOrNull()?.user?.id
                 if (userId != null) {
+                    // Ensure uniqueness: remove any existing row for this (user_type, token)
+                    client.from("device_tokens").delete {
+                        filter {
+                            eq("user_type", "customer")
+                            eq("token", token)
+                        }
+                    }
                     client.from("device_tokens").insert(
                         mapOf(
                             "user_id" to userId,

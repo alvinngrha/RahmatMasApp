@@ -57,6 +57,7 @@ fun HomeAdminScreen(
     onGoToRecording: () -> Unit,
     onGoToTransactionHistory: () -> Unit,
     onGoToStockManagement: () -> Unit,
+    onGoToFinancialReport: () -> Unit,
 ) {
     val context = LocalContext.current
 //    val networkMonitor = NetworkMonitor(context)
@@ -421,7 +422,8 @@ fun HomeAdminScreen(
                                 .background(
                                     color = Color(0xFFD4AF37),
                                     shape = RoundedCornerShape(15.dp)
-                                ),
+                                )
+                                .clickable { onGoToFinancialReport() },
                         ) {
                             Column(
                                 modifier = Modifier
@@ -581,4 +583,3 @@ fun HomeAdminScreen(
         }
     }
 }
-

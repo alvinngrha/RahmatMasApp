@@ -20,6 +20,13 @@ object FcmTokenRegistrar {
                 try {
                     val client = SupabaseModule.client
                     val userId = client.auth.currentSessionOrNull()?.user?.id ?: return@launch
+                    // Ensure uniqueness: remove any existing row for this (user_type, token)
+                    client.from("device_tokens").delete {
+                        filter {
+                            eq("user_type", "customer")
+                            eq("token", token)
+                        }
+                    }
                     client.from("device_tokens").insert(
                         mapOf(
                             "user_id" to userId,
@@ -42,6 +49,13 @@ object FcmTokenRegistrar {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val client = SupabaseModule.client
+                    // Ensure uniqueness for admin tokens as well
+                    client.from("device_tokens").delete {
+                        filter {
+                            eq("user_type", "admin")
+                            eq("token", token)
+                        }
+                    }
                     client.from("device_tokens").insert(
                         mapOf(
                             "user_id" to "admin_notifications",
