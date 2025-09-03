@@ -2,7 +2,6 @@ package com.example.rahmatmas.ui.admin.financialreport
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.local.dao.TransactionEntity
 import com.example.rahmatmas.data.local.db.AppDatabase
@@ -143,18 +142,6 @@ class FinancialReportAdminViewModel(
     fun formatDate(date: Date): String {
         val sdf = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
         return sdf.format(date)
-    }
-}
-
-class FinancialReportAdminViewModelFactory(
-    private val context: Context
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(FinancialReportAdminViewModel::class.java)) {
-            return FinancialReportAdminViewModel(context) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
