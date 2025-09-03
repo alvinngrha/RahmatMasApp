@@ -71,6 +71,7 @@ class CheckoutViewModel : ViewModel() {
 
     fun placeOrder(
         stock: SupabaseStock,
+        quantity: Int,
         name: String,
         address: String,
         phone: String,
@@ -147,7 +148,8 @@ class CheckoutViewModel : ViewModel() {
 
                 val kadarPersen = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
                 val hargaDasarPerGram = (hargaEmas * kadarPersen / 100)
-                val totalHarga = hargaDasarPerGram * stock.berat_emas
+                val validQty = if (quantity < 1) 1 else quantity
+                val totalHarga = hargaDasarPerGram * stock.berat_emas * validQty
 
                 Log.d("CheckoutViewModel", "Calculated total price: $totalHarga")
 
@@ -156,7 +158,7 @@ class CheckoutViewModel : ViewModel() {
                     order_id = orderId,
                     id_stock = stock.id_barang,
                     nama_stock = stock.nama_barang,
-                    jumlah_order = 1,
+                    jumlah_order = validQty,
                     kadar_emas = stock.kadar_emas,
                     kadar_persen = stock.kadar_persen,
                     berat_emas = stock.berat_emas,

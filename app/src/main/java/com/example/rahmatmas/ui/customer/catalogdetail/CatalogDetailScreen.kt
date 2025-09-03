@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
@@ -37,12 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.example.rahmatmas.R
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.ui.customer.catalog.CatalogViewModel
 import com.example.rahmatmas.ui.customer.catalog.CatalogViewModelFactory
@@ -52,7 +55,7 @@ import com.example.rahmatmas.ui.customer.catalog.CatalogViewModelFactory
 fun CatalogDetailScreen(
     stock: SupabaseStock,
     onBackClick: () -> Unit,
-    onOrderClick: (SupabaseStock) -> Unit,
+    onOrderClick: (SupabaseStock, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -65,10 +68,8 @@ fun CatalogDetailScreen(
         viewModel.fetchGoldPrice()
     }
 
-    val calculatedPrice = remember(uiState.goldPrice, stock) {
-        uiState.goldPrice?.let {
-            viewModel.calculatePrice(stock)
-        }
+    val calculatedTotalPrice = remember(uiState.goldPrice, stock, uiState.orderQuantity) {
+        uiState.goldPrice?.let { viewModel.calculateTotalPrice(stock) }
     }
 
     Scaffold(
@@ -141,6 +142,56 @@ fun CatalogDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Quantity selector
+                    Text(
+                        text = "Jumlah",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { viewModel.decreaseQuantity() },
+                                enabled = uiState.orderQuantity > 1
+                            ) {
+                                Icon(painter = painterResource(R.drawable.baseline_remove_24), contentDescription = "Kurangi")
+                            }
+                            Text(
+                                text = uiState.orderQuantity.toString(),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            IconButton(
+                                onClick = { viewModel.increaseQuantity(stock) },
+                                enabled = uiState.orderQuantity < stock.jumlah_stok
+                            ) {
+                                Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah")
+                            }
+                        }
+                        Text(
+                            text = "Max: ${stock.jumlah_stok}",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+
+                    if (uiState.quantityWarning != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.quantityWarning ?: "",
+                            fontSize = 12.sp,
+                            color = Color.Red
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
                         text = "harga emas dapat berubah setiap harinya mengikuti harga emas",
                         fontSize = 12.sp,
@@ -153,9 +204,9 @@ fun CatalogDetailScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (calculatedPrice != null) {
+            if (calculatedTotalPrice != null) {
                 Text(
-                    text = viewModel.formatCurrency(calculatedPrice),
+                    text = viewModel.formatCurrency(calculatedTotalPrice),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF9800)
@@ -174,10 +225,11 @@ fun CatalogDetailScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = { onOrderClick(stock) },
+                onClick = { onOrderClick(stock, uiState.orderQuantity) },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
                 shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState.orderQuantity in 1..stock.jumlah_stok
             ) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,

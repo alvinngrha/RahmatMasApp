@@ -282,8 +282,9 @@ fun RahmatMasApp(
                         CatalogDetailScreen(
                             stock = it,
                             onBackClick = { navController.navigateUp() },
-                            onOrderClick = { selected ->
+                            onOrderClick = { selected, qty ->
                                 navController.currentBackStackEntry?.savedStateHandle?.set("checkoutStock", selected)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("checkoutQty", qty)
                                 navController.navigate("checkoutcostumer")
                             }
                         )
@@ -291,11 +292,12 @@ fun RahmatMasApp(
                 }
 
                 composable("checkoutcostumer") {
-                    val stockCheckout =
-                        navController.previousBackStackEntry?.savedStateHandle?.get<SupabaseStock>("checkoutStock")
+                    val stockCheckout = navController.previousBackStackEntry?.savedStateHandle?.get<SupabaseStock>("checkoutStock")
+                    val qty = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("checkoutQty") ?: 1
                     stockCheckout?.let { stockItem ->
                         CheckoutScreen(
                             stock = stockItem,
+                            quantity = qty,
                             onBackClick = { navController.navigateUp() },
                             onOrderPlaced = {
                                 navController.navigate("homecostumer") {

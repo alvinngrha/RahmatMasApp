@@ -19,7 +19,10 @@ data class CatalogUiState(
     val isOnline: Boolean = true,
     val errorMessage: String? = null,
     val searchQuery: String = "",
-    val goldPrice: Double? = null
+    val goldPrice: Double? = null,
+    // Detail screen state
+    val orderQuantity: Int = 1,
+    val quantityWarning: String? = null
 )
 
 class CatalogViewModel(
@@ -179,6 +182,42 @@ class CatalogViewModel(
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
+    // Quantity controls for catalog detail
+    fun increaseQuantity(stock: SupabaseStock) {
+        val current = _uiState.value.orderQuantity
+        if (current >= stock.jumlah_stok) {
+            _uiState.value = _uiState.value.copy(
+                quantityWarning = "Jumlah melebihi stok tersedia"
+            )
+            return
+        }
+        _uiState.value = _uiState.value.copy(
+            orderQuantity = current + 1,
+            quantityWarning = null
+        )
+    }
+
+    fun decreaseQuantity() {
+        val current = _uiState.value.orderQuantity
+        if (current <= 1) return
+        _uiState.value = _uiState.value.copy(
+            orderQuantity = current - 1,
+            quantityWarning = null
+        )
+    }
+
+    fun setQuantity(stock: SupabaseStock, qty: Int) {
+        val clamped = qty.coerceIn(1, stock.jumlah_stok)
+        _uiState.value = _uiState.value.copy(
+            orderQuantity = clamped,
+            quantityWarning = if (qty > stock.jumlah_stok) "Jumlah melebihi stok tersedia" else null
+        )
+    }
+
+    fun clearQuantityWarning() {
+        _uiState.value = _uiState.value.copy(quantityWarning = null)
+    }
+
     fun fetchGoldPrice() {
         viewModelScope.launch {
             try {
@@ -222,6 +261,12 @@ class CatalogViewModel(
 
         // Rumus: Harga = (Harga Emas Hari Ini * Kadar Persen / 100) * Berat Emas
         return hargaDasarPerGram * beratEmas
+    }
+
+    fun calculateTotalPrice(stock: SupabaseStock): Double? {
+        val base = calculatePrice(stock) ?: return null
+        val qty = _uiState.value.orderQuantity
+        return base * qty
     }
 
     // Format currency untuk tampilan

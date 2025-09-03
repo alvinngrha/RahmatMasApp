@@ -43,6 +43,7 @@ import com.example.rahmatmas.data.supabase.db.SupabaseStock
 @Composable
 fun CheckoutScreen(
     stock: SupabaseStock,
+    quantity: Int,
     onBackClick: () -> Unit,
     onOrderPlaced: () -> Unit,
     modifier: Modifier = Modifier,
@@ -166,6 +167,7 @@ fun CheckoutScreen(
                 onClick = {
                     viewModel.placeOrder(
                         stock,
+                        quantity,
                         name,
                         address,
                         phone,

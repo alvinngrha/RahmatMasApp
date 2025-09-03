@@ -19,19 +19,19 @@
 
 ## Coding Style & Naming Conventions
 - Language: Kotlin + Jetpack Compose + Material3; 4‑space indent; Kotlin standard style.
-- Architecture: MVVM; each screen owns state via a `ViewModel` and immutable UI state.
+- Architecture: MVVM with immutable UI state per screen `ViewModel`.
 - Naming: screens `...Screen`; state `...ViewModel`, `...ViewModelFactory`; data `...Repository`; Room `...Dao` / `...Entity`.
 - Packages mirror features, e.g., `ui/admin/...`, `ui/customer/...`, `data/...`.
 
 ## Testing Guidelines
 - Frameworks: JUnit for unit; AndroidX + Compose testing for instrumentation/UI.
-- Test naming mirrors class under test, e.g., `HomeCustomerViewModelTest`.
-- Run: unit via `./gradlew testDebugUnitTest`; instrumentation via `./gradlew connectedAndroidTest`.
+- Test names mirror class under test, e.g., `HomeCustomerViewModelTest`.
+- Run tests: unit via `./gradlew testDebugUnitTest`; instrumentation via `./gradlew connectedAndroidTest`.
 
 ## Commit & Pull Request Guidelines
-- Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, etc.).
-- PRs: clear summary, linked issue, test steps, and screenshots/GIFs for UI changes.
-- Scope changes narrowly; ensure CI/build is green before review.
+- Commits: follow Conventional Commits (`feat:`, `fix:`, `refactor:`, etc.).
+- PRs: include clear summary, linked issue, test steps, and screenshots/GIFs for UI changes.
+- Keep scope narrow; ensure CI/build is green before review.
 
 ## Security & Configuration Tips
 - Keep Android SDK path in `local.properties`; never commit keystores.
@@ -41,5 +41,5 @@
 ## Architecture Overview
 - MVVM with repositories and Room under `data/`.
 - Compose UI organized by feature packages.
-- Keep state immutable; perform side‑effects with coroutines in `ViewModel`/repositories`.
+- Keep state immutable; perform side‑effects with coroutines in `ViewModel`/repositories.
 
