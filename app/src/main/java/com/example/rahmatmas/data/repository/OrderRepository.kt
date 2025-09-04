@@ -1,5 +1,6 @@
 package com.example.rahmatmas.data.repository
 
+import android.util.Log
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseOrder
 import com.example.rahmatmas.data.supabase.db.SupabaseOrderItem
@@ -13,7 +14,6 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.postgresChangeFlow
-import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
@@ -41,8 +41,8 @@ class OrderRepository {
         // Send notification to all admins (use special admin identifier)
         sendPushNotification(
             userId = "admin_notifications",
-            title = "Pesanan Baru",
-            body = "Pesanan baru dari ${order.recipient_name}"
+            title = "Pesanan Baru Nih",
+            body = "Horee, ada pesanan baru dari ${order.recipient_name}"
         )
     }
 
@@ -106,7 +106,7 @@ class OrderRepository {
             sendPushNotification(
                 userId = userId,
                 title = "Status Pesanan Diperbarui",
-                body = "Status pesanan Anda: $status"
+                body = "Status pesanan kamu: $status"
             )
         }
 
