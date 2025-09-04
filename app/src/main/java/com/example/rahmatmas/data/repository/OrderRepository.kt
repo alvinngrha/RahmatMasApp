@@ -109,13 +109,23 @@ class OrderRepository {
                 body = "Status pesanan Anda: $status"
             )
         }
+
+        // Notify admins when a customer cancels an order
+        if (status == "dibatalkan" && (cancelledBy == "customer" || updatedOrder?.cancelled_by == "customer")) {
+            val customerName = updatedOrder?.recipient_name ?: "Pelanggan"
+            sendPushNotification(
+                userId = "admin_notifications",
+                title = "Pesanan Dibatalkan",
+                body = "Pesanan dibatalkan oleh $customerName"
+            )
+        }
     }
 
     suspend fun getOrderById(id: String): SupabaseOrder? {
         return client.from("orders")
-            .select()
+            .select { filter { eq("id", id) } }
             .decodeList<SupabaseOrder>()
-            .find { it.id == id }
+            .firstOrNull()
     }
 
     // Get orders by authenticated user ID

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -104,6 +105,7 @@ fun CheckoutScreen(
                     label = { Text("Akun Google") },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false,
+                    shape = RoundedCornerShape(16.dp),
                     supportingText = { Text("Data dari akun Google: ${uiState.userEmail}") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -114,7 +116,8 @@ fun CheckoutScreen(
                 onValueChange = { name = it },
                 label = { Text("Nama Penerima") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Masukkan nama penerima") }
+                placeholder = { Text("Masukkan nama penerima") },
+                shape = RoundedCornerShape(16.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -124,7 +127,8 @@ fun CheckoutScreen(
                 label = { Text("Alamat Lengkap") },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Masukkan alamat pengiriman") },
-                minLines = 2
+                minLines = 2,
+                shape = RoundedCornerShape(16.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -134,7 +138,8 @@ fun CheckoutScreen(
                 label = { Text("Nomor HP") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                placeholder = { Text("Contoh: 08123456789") }
+                placeholder = { Text("Contoh: 08123456789") },
+                shape = RoundedCornerShape(16.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -144,7 +149,8 @@ fun CheckoutScreen(
                 label = { Text("Catatan (opsional)") },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Catatan tambahan untuk pesanan") },
-                minLines = 2
+                minLines = 2,
+                shape = RoundedCornerShape(16.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
 
