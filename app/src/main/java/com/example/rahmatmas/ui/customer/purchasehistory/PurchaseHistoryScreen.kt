@@ -1,7 +1,15 @@
 package com.example.rahmatmas.ui.customer.purchasehistory
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,11 +44,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -132,6 +143,7 @@ fun PurchaseHistoryScreen(
                 }
             }
         } else {
+            var expandedId by rememberSaveable { androidx.compose.runtime.mutableStateOf<String?>(null) }
             LazyColumn(
                 modifier = modifier
                     .fillMaxSize()
@@ -140,9 +152,17 @@ fun PurchaseHistoryScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(uiState.purchases) { order ->
+                items(uiState.purchases, key = { it.id }) { order ->
                     val stock = viewModel.getStockDetail(order.items.firstOrNull()?.id_stock ?: "")
-                    PurchaseCard(order, stock)
+                    val isExpanded = expandedId == order.id
+                    PurchaseCard(
+                        order = order,
+                        stockDetail = stock,
+                        expanded = isExpanded,
+                        onToggle = {
+                            expandedId = if (isExpanded) null else order.id
+                        }
+                    )
                 }
             }
         }
@@ -153,19 +173,30 @@ fun PurchaseHistoryScreen(
 private fun PurchaseCard(
     order: SupabaseOrderWithItems,
     stockDetail: SupabaseStock?,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val item = order.items.firstOrNull()
     val status = order.status.toOrderStatus()
     val statusColor = getStatusColor(status)
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(6.dp, RoundedCornerShape(16.dp)),
+            .shadow(6.dp, RoundedCornerShape(16.dp))
+            .animateContentSize()
+            .clickable(onClick = onToggle)
+            .then(Modifier
+                .fillMaxWidth()
+            ),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+        ) {
             // Header: Order ID + date + status badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -217,7 +248,11 @@ private fun PurchaseCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Product info
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp)
+            ) {
                 val photoUrl = item?.photo_path ?: stockDetail?.photo_path
                 if (photoUrl != null) {
                     Image(
@@ -276,60 +311,96 @@ private fun PurchaseCard(
                 color = Color(0xFF2C3E50)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Toggle row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .background(Color.Transparent)
+                    .then(Modifier),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (expanded) "Sembunyikan detail" else "Lihat detail",
+                    fontSize = 12.sp,
+                    color = Color(0xFF2196F3),
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .padding(vertical = 4.dp)
+                )
+                Icon(
+                    painter = painterResource(R.drawable.baseline_expand_more_24) ,
+                    contentDescription = null,
+                    tint = Color(0xFF2196F3),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .graphicsLayer { rotationZ = rotation }
+                )
+            }
 
             // Order details
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
-                shape = RoundedCornerShape(12.dp)
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn() + expandVertically(),
+                exit = shrinkVertically() + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    OrderInfoRow("Penerima", order.recipient_name)
-                    OrderInfoRow("Alamat", order.address)
-                    OrderInfoRow("No. HP", order.phone)
-                    OrderInfoRow(
-                        "Pengiriman",
-                        order.shipping_option.replaceFirstChar { it.uppercase() }
-                    )
-                    if (!order.note.isNullOrBlank()) {
-                        OrderInfoRow("Catatan", order.note!!)
-                    }
-                    if (status == OrderStatus.CANCELLED) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = null,
-                                        tint = Color(0xFFD32F2F),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Pesanan Dibatalkan",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        color = Color(0xFFD32F2F)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = order.cancel_reason ?: "Tidak ada alasan yang diberikan",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF424242)
-                                )
-                                if (!order.cancelled_by.isNullOrBlank()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        OrderInfoRow("Penerima", order.recipient_name)
+                        OrderInfoRow("Alamat", order.address)
+                        OrderInfoRow("No. HP", order.phone)
+                        OrderInfoRow(
+                            "Pengiriman",
+                            order.shipping_option.replaceFirstChar { it.uppercase() }
+                        )
+                        if (!order.note.isNullOrBlank()) {
+                            OrderInfoRow("Catatan", order.note!!)
+                        }
+                        if (status == OrderStatus.CANCELLED) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = Color(0xFFD32F2F),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Pesanan Dibatalkan",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFFD32F2F)
+                                        )
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Dibatalkan oleh: ${if (order.cancelled_by == "admin") "Toko" else "Anda"}",
-                                        fontSize = 10.sp,
-                                        color = Color.Gray,
-                                        fontWeight = FontWeight.Medium
+                                        text = order.cancel_reason ?: "Tidak ada alasan yang diberikan",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF424242)
                                     )
+                                    if (!order.cancelled_by.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Dibatalkan oleh: ${if (order.cancelled_by == "admin") "Toko" else "Anda"}",
+                                            fontSize = 10.sp,
+                                            color = Color.Gray,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
                                 }
                             }
                         }
