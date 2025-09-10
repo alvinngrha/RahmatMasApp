@@ -151,6 +151,11 @@ fun RahmatMasApp(
                             navController.navigate("orderstatuscustomer") {
                                 launchSingleTop = true
                             }
+                        },
+                        onGoToHistory = {
+                            navController.navigate("purchasehistorycustomer") {
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -159,6 +164,11 @@ fun RahmatMasApp(
                         onBackClick = {
                             navController.navigateUp()
                         },
+                    )
+                }
+                composable("purchasehistorycustomer") {
+                    com.example.rahmatmas.ui.customer.purchasehistory.PurchaseHistoryScreen(
+                        onBackClick = { navController.navigateUp() }
                     )
                 }
                 composable("loginadmin") {
@@ -205,6 +215,9 @@ fun RahmatMasApp(
                         },
                         onGoToFinancialReport = {
                             navController.navigate("financialreportadmin") { launchSingleTop = true }
+                        },
+                        onGoToOnlineSale = {
+                            navController.navigate("onlinesaleadmin") { launchSingleTop = true }
                         }
                     )
                 }

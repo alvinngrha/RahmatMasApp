@@ -164,7 +164,8 @@ class CheckoutViewModel : ViewModel() {
                     berat_emas = stock.berat_emas,
                     ongkos_per_gram = stock.ongkos_per_gram,
                     harga_emas_hariini = hargaEmas,
-                    total_harga = totalHarga
+                    total_harga = totalHarga,
+                    photo_path = stock.photo_path
                 )
 
                 Log.d("CheckoutViewModel", "Placing order in database...")

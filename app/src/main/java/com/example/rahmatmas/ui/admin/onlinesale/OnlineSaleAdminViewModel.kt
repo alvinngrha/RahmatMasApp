@@ -3,7 +3,9 @@ package com.example.rahmatmas.ui.admin.onlinesale
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.rahmatmas.data.local.db.AppDatabase
 import com.example.rahmatmas.data.network.NetworkMonitor
+import com.example.rahmatmas.data.repository.OfflineTransactionRepository
 import com.example.rahmatmas.data.repository.OrderRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.db.OrderStatus
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 data class OnlineSaleUiState(
     val isLoading: Boolean = false,
@@ -37,6 +40,11 @@ class OnlineSaleAdminViewModel(
     private val orderRepository = OrderRepository()
     private val networkMonitor = NetworkMonitor(context)
     private val stockRepository = StockRepository(networkMonitor, context)
+    private val offlineTransactionRepository = OfflineTransactionRepository(
+        transactionDao = AppDatabase.getDatabase(context).transactionDao(),
+        networkMonitor = networkMonitor,
+        context = context
+    )
 
     private val _uiState = MutableStateFlow(OnlineSaleUiState())
     val uiState: StateFlow<OnlineSaleUiState> = _uiState.asStateFlow()
@@ -136,10 +144,29 @@ class OnlineSaleAdminViewModel(
         }
     }
 
-    fun updateOrderStatus(orderId: String, newStatus: OrderStatus) {
+    fun updateOrderStatus(order: SupabaseOrderWithItems, newStatus: OrderStatus) {
         viewModelScope.launch {
             try {
-                orderRepository.updateOrderStatus(orderId, newStatus.toDbString())
+                orderRepository.updateOrderStatus(order.id, newStatus.toDbString())
+                // When order completed, record into transaction history
+                val newTransactionId = "RB-${UUID.randomUUID()}"
+                if (newStatus == OrderStatus.COMPLETED) {
+                    val item = order.items.firstOrNull()
+                    if (item != null) {
+                        offlineTransactionRepository.saveTransactionFromOrderItem(
+                            idTransaksi = newTransactionId,
+                            namaBarang = item.nama_stock,
+                            jumlahBarang = item.jumlah_order,
+                            kadarEmas = item.kadar_emas,
+                            jenisTransaksi = "Jual",
+                            beratEmas = item.berat_emas,
+                            ongkos = item.ongkos_per_gram,
+                            hargaDasarPerGram = item.harga_emas_hariini,
+                            totalHarga = item.total_harga,
+                            photoUrl = item.photo_path
+                        )
+                    }
+                }
                 loadOrders() // Refresh orders
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = e.message)

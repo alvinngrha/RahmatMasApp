@@ -314,7 +314,7 @@ fun OnlineSaleScreen(
                                     order.items.firstOrNull()?.id_stock ?: ""
                                 ),
                                 onStatusUpdate = { newStatus ->
-                                    viewModel.updateOrderStatus(order.id, newStatus)
+                                    viewModel.updateOrderStatus(order, newStatus)
                                 },
                                 onCancelClick = {
                                     viewModel.showCancelDialog(order)

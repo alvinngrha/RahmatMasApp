@@ -14,7 +14,8 @@ data class SupabaseOrderItem(
     val berat_emas: Double,
     val ongkos_per_gram: Double,
     val harga_emas_hariini: Double,
-    val total_harga: Double
+    val total_harga: Double,
+    val photo_path: String? = null
 )
 
 data class SupabaseOrderWithItems(

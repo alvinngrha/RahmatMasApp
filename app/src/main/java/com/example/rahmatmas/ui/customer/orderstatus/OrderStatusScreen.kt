@@ -360,7 +360,8 @@ private fun CustomerOrderCard(
             // Product info
             Row(modifier = Modifier.fillMaxWidth()) {
                 val item = order.items.firstOrNull()
-                if (stockDetail?.photo_path != null) {
+                val photoUrl = item?.photo_path ?: stockDetail?.photo_path
+                if (photoUrl != null) {
                     Card(
                         modifier = Modifier
                             .size(80.dp)
@@ -368,7 +369,7 @@ private fun CustomerOrderCard(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Image(
-                            painter = rememberAsyncImagePainter(stockDetail.photo_path),
+                            painter = rememberAsyncImagePainter(photoUrl),
                             contentDescription = "Product Image",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

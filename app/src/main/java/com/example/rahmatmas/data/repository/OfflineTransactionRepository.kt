@@ -181,13 +181,18 @@ class OfflineTransactionRepository(
                 // Try to upload photo if exists and not already uploaded
                 var cloudPhotoUrl: String? = null
                 if (!entity.photoPath.isNullOrEmpty()) {
-                    try {
-                        val photoUri = Uri.parse("file://${entity.photoPath}")
-                        val photoResult = photoUploadRepository.uploadPhoto(photoUri, entity.id)
-                        cloudPhotoUrl = photoResult.getOrNull()
-                    } catch (e: Exception) {
-                        Log.w("OfflineTransactionRepo", "Failed to upload photo for transaction ${entity.id}", e)
-                        // Continue without photo URL
+                    if (entity.photoPath.startsWith("http")) {
+                        // Already a cloud URL (e.g., from stock/order item)
+                        cloudPhotoUrl = entity.photoPath
+                    } else {
+                        try {
+                            val photoUri = Uri.parse("file://${entity.photoPath}")
+                            val photoResult = photoUploadRepository.uploadPhoto(photoUri, entity.id)
+                            cloudPhotoUrl = photoResult.getOrNull()
+                        } catch (e: Exception) {
+                            Log.w("OfflineTransactionRepo", "Failed to upload photo for transaction ${entity.id}", e)
+                            // Continue without photo URL
+                        }
                     }
                 }
 
@@ -224,12 +229,16 @@ class OfflineTransactionRepository(
             // Use provided cloudPhotoUrl or try to upload photo if exists
             var finalPhotoUrl = cloudPhotoUrl
             if (finalPhotoUrl == null && !transaction.photoPath.isNullOrEmpty()) {
-                try {
-                    val photoUri = Uri.parse("file://${transaction.photoPath}")
-                    val photoResult = photoUploadRepository.uploadPhoto(photoUri, transaction.id)
-                    finalPhotoUrl = photoResult.getOrNull()
-                } catch (e: Exception) {
-                    Log.w("OfflineTransactionRepo", "Failed to upload photo for single transaction", e)
+                if (transaction.photoPath.startsWith("http")) {
+                    finalPhotoUrl = transaction.photoPath
+                } else {
+                    try {
+                        val photoUri = Uri.parse("file://${transaction.photoPath}")
+                        val photoResult = photoUploadRepository.uploadPhoto(photoUri, transaction.id)
+                        finalPhotoUrl = photoResult.getOrNull()
+                    } catch (e: Exception) {
+                        Log.w("OfflineTransactionRepo", "Failed to upload photo for single transaction", e)
+                    }
                 }
             }
 
@@ -264,5 +273,50 @@ class OfflineTransactionRepository(
     // Force sync (manual sync)
     suspend fun forcSync(): Result<Unit> {
         return syncTransactions()
+    }
+
+    // Save transaction directly from order item (with existing cloud photo URL)
+    suspend fun saveTransactionFromOrderItem(
+        idTransaksi: String,
+        namaBarang: String,
+        jumlahBarang: Int,
+        kadarEmas: String,
+        jenisTransaksi: String,
+        beratEmas: Double,
+        ongkos: Double,
+        hargaDasarPerGram: Double,
+        totalHarga: Double,
+        photoUrl: String?
+    ): Result<String> {
+        return try {
+            val newTransactionId = idTransaksi.ifBlank { "RB-${UUID.randomUUID()}" }
+            val transaction = TransactionEntity(
+                id = newTransactionId,
+                namaBarang = namaBarang,
+                jumlahBarang = jumlahBarang,
+                kadarEmas = kadarEmas,
+                jenisTransaksi = jenisTransaksi,
+                beratEmas = beratEmas,
+                ongkos = ongkos,
+                hargaDasarPerGram = hargaDasarPerGram,
+                totalHarga = totalHarga,
+                photoPath = photoUrl,
+                createdAt = Date(),
+                updatedAt = Date(),
+                isSynced = false,
+                isDeleted = false
+            )
+            transactionDao.insertTransaction(transaction)
+            // Try sync immediately if online
+            coroutineScope.launch {
+                if (isCurrentlyOnline) {
+                    syncSingleTransaction(transaction, cloudPhotoUrl = photoUrl)
+                }
+            }
+            Result.success(transaction.id)
+        } catch (e: Exception) {
+            Log.e("OfflineTransactionRepo", "Error saving transaction from order item", e)
+            Result.failure(e)
+        }
     }
 }
