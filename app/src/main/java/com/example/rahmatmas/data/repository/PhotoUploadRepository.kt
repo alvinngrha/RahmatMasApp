@@ -133,6 +133,12 @@ class PhotoUploadRepository(private val context: Context) {
         isOnline: Boolean = true
     ): Result<PhotoUploadResult> {
         return try {
+            // If the URI is already a remote URL (e.g., from stock photo), skip upload
+            val scheme = photoUri.scheme?.lowercase()
+            if (scheme == "http" || scheme == "https") {
+                return Result.success(PhotoUploadResult(localPath = null, cloudUrl = photoUri.toString()))
+            }
+
             // Always save locally first
             val localResult = savePhotoLocally(photoUri, transactionId)
             val localPath = localResult.getOrNull()

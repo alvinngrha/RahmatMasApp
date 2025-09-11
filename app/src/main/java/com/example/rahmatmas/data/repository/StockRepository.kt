@@ -220,16 +220,4 @@ class StockRepository(
             emit(emptyList())
         }
     }
-
-    // Calculate dynamic price for stock item based on current gold price
-    fun calculateStockPrice(stock: SupabaseStock, currentGoldPrice: Double): StockPriceInfo {
-        val persentase = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
-        val hargaDasarPerGram = (currentGoldPrice * persentase / 100)
-        val totalHarga = hargaDasarPerGram * stock.berat_emas
-
-        return StockPriceInfo(
-            hargaDasarPerGram = hargaDasarPerGram,
-            totalHarga = totalHarga
-        )
-    }
 }

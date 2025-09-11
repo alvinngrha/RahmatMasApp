@@ -171,7 +171,7 @@ private fun EnhancedTopAppBar(
         title = {
             Text(
                 "Laporan Keuangan",
-                color = Color.White,
+                color = Color.Black,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
@@ -183,7 +183,7 @@ private fun EnhancedTopAppBar(
                 Icon(
                     Icons.Default.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White
+                    tint = Color.Black
                 )
             }
         },

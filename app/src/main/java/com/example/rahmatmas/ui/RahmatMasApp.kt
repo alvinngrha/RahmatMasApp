@@ -260,7 +260,9 @@ fun RahmatMasApp(
                 }
 
                 composable("transactionhistory") {
-                    TransactionHistoryScreen()
+                    TransactionHistoryScreen(
+                        onBackClick = { navController.navigateUp() }
+                    )
                 }
 
                 composable("onlinesaleadmin") {

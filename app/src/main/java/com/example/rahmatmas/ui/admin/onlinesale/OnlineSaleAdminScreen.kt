@@ -122,7 +122,7 @@ fun OnlineSaleScreen(
                             text = "Penjualan Online",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = Color.White
+                            color = Color.Black
                         )
                         Spacer(modifier = Modifier.width(8.dp))
 

@@ -8,13 +8,18 @@ import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.local.dao.TransactionEntity
 import com.example.rahmatmas.data.local.db.AppDatabase
 import com.example.rahmatmas.data.network.NetworkMonitor
+import com.example.rahmatmas.data.repository.GoldPriceRepository
 import com.example.rahmatmas.data.repository.OfflineTransactionRepository
+import com.example.rahmatmas.data.repository.StockRepository
+import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import com.example.rahmatmas.util.PdfGenerator
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.util.Date
 import java.util.Locale
 
 data class TransactionUiState(
@@ -27,6 +32,12 @@ data class TransactionUiState(
     val ongkos: String = "",
     val hargaDasarPerGram: String = "",
     val totalHarga: Double = 0.0,
+    // Search & autofill from stock
+    val searchQuery: String = "",
+    val showSearchResults: Boolean = false,
+    val searchResults: List<SupabaseStock> = emptyList(),
+    val selectedStock: SupabaseStock? = null,
+    val goldPrice: Double? = null,
     val isKadarEmasExpanded: Boolean = false,
     val isJenisTransaksiExpanded: Boolean = false,
     val snackbarMessage: String? = null,
@@ -40,6 +51,7 @@ data class TransactionUiState(
     val isOnline: Boolean = true,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
+    val lastSaveWasOnline: Boolean? = null,
     val unsyncedCount: Int = 0
 )
 
@@ -54,6 +66,8 @@ class TransactionRecordingViewModel(
         networkMonitor = networkMonitor,
         context = context
     )
+    private val stockRepository = StockRepository(networkMonitor, context)
+    private val goldPriceRepository = GoldPriceRepository()
     private val pdfGenerator = PdfGenerator(context)
 
     private val _transactionUiState = MutableStateFlow(TransactionUiState())
@@ -61,6 +75,7 @@ class TransactionRecordingViewModel(
 
     // Current network status
     private var isCurrentlyOnline = true
+    private var searchJob: Job? = null
 
     init {
         // Monitor network status
@@ -72,6 +87,8 @@ class TransactionRecordingViewModel(
                 // Update unsynced count
                 if (isOnline) {
                     updateUnsyncedCount()
+                    // Prefetch gold price for faster autofill
+                    fetchGoldPrice()
                 }
             }
         }
@@ -85,11 +102,6 @@ class TransactionRecordingViewModel(
             val count = offlineRepository.getUnsyncedCount()
             _transactionUiState.value = _transactionUiState.value.copy(unsyncedCount = count)
         }
-    }
-
-    //update id transaksi
-    fun updateIdTransaksi(idTransaksi: String) {
-        _transactionUiState.value = _transactionUiState.value.copy(idTransaksi = idTransaksi)
     }
 
     // Update nama barang
@@ -204,6 +216,105 @@ class TransactionRecordingViewModel(
         _transactionUiState.value = _transactionUiState.value.copy(totalHarga = totalHarga)
     }
 
+    // ===================
+    // Search & Autofill
+    // ===================
+    fun onSearchQueryChange(query: String) {
+        _transactionUiState.value = _transactionUiState.value.copy(searchQuery = query)
+        if (query.isBlank()) {
+            _transactionUiState.value = _transactionUiState.value.copy(
+                showSearchResults = false,
+                searchResults = emptyList()
+            )
+            return
+        }
+
+        if (!isCurrentlyOnline) {
+            _transactionUiState.value = _transactionUiState.value.copy(
+                searchResults = emptyList(),
+                showSearchResults = false,
+                snackbarMessage = "Fitur pencarian stok memerlukan koneksi internet"
+            )
+        } else {
+            searchJob?.cancel()
+            searchJob = viewModelScope.launch {
+                try {
+                    stockRepository.searchStocks(query).collect { results ->
+                        _transactionUiState.value = _transactionUiState.value.copy(
+                            searchResults = results,
+                            showSearchResults = results.isNotEmpty()
+                        )
+                    }
+                } catch (e: Exception) {
+                    _transactionUiState.value = _transactionUiState.value.copy(
+                        searchResults = emptyList(),
+                        showSearchResults = false,
+                        snackbarMessage = "Gagal mencari stok, barang tidak ditemukan"
+                    )
+                }
+            }
+        }
+    }
+
+    fun setSearchExpanded(expanded: Boolean) {
+        _transactionUiState.value = _transactionUiState.value.copy(showSearchResults = expanded)
+    }
+
+    fun selectStock(stock: SupabaseStock) {
+        // Autofill fields from selected stock
+        _transactionUiState.value = _transactionUiState.value.copy(
+            selectedStock = stock,
+            searchQuery = stock.nama_barang,
+            showSearchResults = false
+        )
+
+        updateNamaBarang(stock.nama_barang)
+        updateJumlahBarang("1")
+        updateKadarEmas(stock.kadar_emas)
+        updateBeratEmas(stock.berat_emas.toString())
+        updateOngkos(stock.ongkos_per_gram.toLong().toString())
+
+        // Set photo if available
+        try {
+            stock.photo_path?.let { url -> setPhotoUri(Uri.parse(url)) }
+        } catch (_: Exception) { /* ignore bad uri */ }
+
+        // Calculate harga dasar per gram using current gold price
+        computeAndSetHargaDasar(stock)
+    }
+
+    private fun computeAndSetHargaDasar(stock: SupabaseStock) {
+        val price = _transactionUiState.value.goldPrice
+        if (price != null) {
+            val persen = stock.kadar_persen.replace("%", "").toDoubleOrNull() ?: 0.0
+            val hargaDasarPerGram = (price * persen / 100)
+            updateHargaDasarPerGram(hargaDasarPerGram.toLong().toString())
+            calculateTotalHarga()
+        } else {
+            // Try fetch price then compute
+            fetchGoldPrice(onSuccess = {
+                computeAndSetHargaDasar(stock)
+            })
+        }
+    }
+
+    fun fetchGoldPrice(onSuccess: (() -> Unit)? = null) {
+        if (!isCurrentlyOnline) return
+        viewModelScope.launch {
+            try {
+                val response = goldPriceRepository.getGoldPrice()
+                if (response.isSuccessful) {
+                    val goldData = response.body()?.data?.firstOrNull()
+                    val price = goldData?.sell?.toDouble()
+                    if (price != null) {
+                        _transactionUiState.value = _transactionUiState.value.copy(goldPrice = price)
+                        onSuccess?.invoke()
+                    }
+                }
+            } catch (_: Exception) { /* ignore */ }
+        }
+    }
+
     // Simpan transaksi (offline-first)
     fun simpanTransaksi() {
         viewModelScope.launch {
@@ -212,6 +323,19 @@ class TransactionRecordingViewModel(
             // Validasi form
             if (!validateForm(currentState)) {
                 return@launch
+            }
+
+            // Pre-validate stock availability for online "Jual"
+            val qtyToAdjust = currentState.jumlahBarang.toIntOrNull() ?: 1
+            val selected = currentState.selectedStock
+            if (isCurrentlyOnline && selected != null && currentState.jenisTransaksi == "Jual") {
+                if (qtyToAdjust > selected.jumlah_stok) {
+                    _transactionUiState.value = currentState.copy(
+                        snackbarMessage = "Stok tidak mencukupi. Stok tersedia: ${selected.jumlah_stok}",
+                        error = "Stok tidak mencukupi"
+                    )
+                    return@launch
+                }
             }
 
             _transactionUiState.value = currentState.copy(isSaving = true, error = null)
@@ -235,13 +359,31 @@ class TransactionRecordingViewModel(
                         _transactionUiState.value = currentState.copy(
                             isSaving = false,
                             saveSuccess = true,
-                            snackbarMessage = if (currentState.isOnline)
-                                "Transaksi berhasil disimpan dan disinkronkan"
-                            else
-                                "Transaksi berhasil disimpan offline. Akan disinkronkan saat online."
+                            lastSaveWasOnline = currentState.isOnline
                         )
+
+                        // Update stock in Supabase if online and a stock item was selected
+                        viewModelScope.launch {
+                            if (isCurrentlyOnline && selected != null) {
+                                try {
+                                    val adjustResult = when (currentState.jenisTransaksi) {
+                                        "Jual" -> stockRepository.reduceStock(selected.id_barang, qtyToAdjust)
+                                        else -> Result.success(Unit)
+                                    }
+
+                                    adjustResult.onFailure { e ->
+                                        _transactionUiState.value = _transactionUiState.value.copy(
+                                            snackbarMessage = "Transaksi tersimpan, namun stok tidak diperbarui: ${e.message}"
+                                        )
+                                    }
+                                } catch (e: Exception) {
+                                    _transactionUiState.value = _transactionUiState.value.copy(
+                                        snackbarMessage = "Transaksi tersimpan, namun gagal memperbarui stok"
+                                    )
+                                }
+                            }
+                        }
                         updateUnsyncedCount()
-                        clearForm()
                     },
                     onFailure = { exception ->
                         _transactionUiState.value = currentState.copy(
@@ -286,6 +428,15 @@ class TransactionRecordingViewModel(
         return true
     }
 
+    // Called when user dismisses the success dialog
+    fun acknowledgeSaveSuccess() {
+        _transactionUiState.value = _transactionUiState.value.copy(
+            saveSuccess = false,
+            lastSaveWasOnline = null
+        )
+        clearForm()
+    }
+
     // Export to PDF
     fun exportToPdf(openAfterSave: Boolean = false) {
         viewModelScope.launch {
@@ -310,8 +461,8 @@ class TransactionRecordingViewModel(
                     hargaDasarPerGram = currentState.hargaDasarPerGram.toDoubleOrNull() ?: 0.0,
                     totalHarga = currentState.totalHarga,
                     photoPath = currentState.photoUri?.toString(),
-                    createdAt = java.util.Date(),
-                    updatedAt = java.util.Date(),
+                    createdAt = Date(),
+                    updatedAt = Date(),
                     isSynced = currentState.isOnline
                 )
 

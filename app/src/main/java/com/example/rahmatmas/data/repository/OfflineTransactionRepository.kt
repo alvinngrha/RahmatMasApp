@@ -98,7 +98,7 @@ class OfflineTransactionRepository(
                 ongkos = ongkos,
                 hargaDasarPerGram = hargaDasarPerGram,
                 totalHarga = totalHarga,
-                photoPath = localPhotoPath,
+                photoPath = localPhotoPath ?: cloudPhotoUrl,
                 createdAt = Date(),
                 updatedAt = Date(),
                 isSynced = false,

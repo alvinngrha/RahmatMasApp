@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,6 +53,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -299,7 +301,8 @@ fun TransactionRecordingScreen(
                                 width = 1.dp,
                                 color = Color.Gray.copy(alpha = 0.2f),
                                 shape = RoundedCornerShape(15.dp)
-                            ),
+                            )
+                            .clip(RoundedCornerShape(15.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
@@ -313,7 +316,8 @@ fun TransactionRecordingScreen(
                                 width = 1.dp,
                                 color = Color.Gray.copy(alpha = 0.2f),
                                 shape = RoundedCornerShape(15.dp)
-                            ),
+                            )
+                            .clip(RoundedCornerShape(15.dp)),
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -348,41 +352,98 @@ fun TransactionRecordingScreen(
                     }
                 }
                 Spacer(modifier = modifier.height(24.dp))
-
-                // Form fields (sama seperti sebelumnya)
+                // Cari Barang dari Stok
                 Text(
-                    text = "ID Transaksi",
+                    text = "Cari Barang dari Stok",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
                 )
 
-                TextField(
-                    value = transactionUiState.idTransaksi,
-                    readOnly = true,
-                    onValueChange = {},
-                    placeholder = {
-                        Text(
-                            text = "ID Transaksi akan otomatis diisi",
-                            fontSize = 12.sp
+                ExposedDropdownMenuBox(
+                    expanded = transactionUiState.showSearchResults && transactionUiState.isOnline,
+                    onExpandedChange = { expanded ->
+                        if (transactionUiState.isOnline) viewModel.setSearchExpanded(
+                            expanded
                         )
                     },
-                    singleLine = true,
-                    shape = RoundedCornerShape(15.dp),
                     modifier = modifier
                         .fillMaxWidth()
                         .border(
                             width = 1.dp,
                             color = Color.Gray.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(15.dp)
-                        ),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = Color.LightGray.copy(alpha = 0.5f),
-                        unfocusedContainerColor = Color.LightGray.copy(alpha = 0.5f)
+                        )
+                ) {
+                    TextField(
+                        value = transactionUiState.searchQuery,
+                        onValueChange = { query -> viewModel.onSearchQueryChange(query) },
+                        placeholder = {
+                            Text(
+                                text = if (transactionUiState.isOnline) "Cari nama/kadar" else "Perlu koneksi internet",
+                                fontSize = 12.sp
+                            )
+                        },
+                        singleLine = true,
+                        enabled = transactionUiState.isOnline,
+                        modifier = modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.LightGray.copy(alpha = 0.3f)
+                        )
                     )
-                )
+
+                    if (transactionUiState.isOnline) {
+                        ExposedDropdownMenu(
+                            expanded = transactionUiState.showSearchResults,
+                            onDismissRequest = { viewModel.setSearchExpanded(false) },
+                            modifier = modifier.background(Color.White)
+                        ) {
+                            transactionUiState.searchResults.take(8).forEach { stock ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(stock.nama_barang)
+                                            Text(
+                                                text = "Kadar ${stock.kadar_emas} • ${stock.berat_emas} gr • Stok ${stock.jumlah_stok}",
+                                                fontSize = 12.sp,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.selectStock(stock)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                if (!transactionUiState.isOnline) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = modifier.padding(top = 6.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.cloud_off),
+                            contentDescription = null,
+                            tint = Color.Red,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Fitur pencarian stok tidak tersedia saat offline. Isi manual.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF9E9E9E)
+                        )
+                    }
+                }
                 Spacer(modifier = modifier.height(16.dp))
 
                 // Nama Barang
@@ -831,6 +892,26 @@ fun TransactionRecordingScreen(
                     }
                 }
             }
+        }
+
+        // Success dialog after saving transaction (differentiates online/offline)
+        if (transactionUiState.saveSuccess) {
+            val wasOnline = transactionUiState.lastSaveWasOnline == true
+            val message = if (wasOnline) {
+                "Transaksi berhasil dicatat dan disinkronkan"
+            } else {
+                "Transaksi berhasil dicatat (offline). Data akan disinkronkan saat online."
+            }
+            AlertDialog(
+                onDismissRequest = { viewModel.acknowledgeSaveSuccess() },
+                confirmButton = {
+                    Button(onClick = { viewModel.acknowledgeSaveSuccess() }) {
+                        Text("OK")
+                    }
+                },
+                title = { Text("Sukses") },
+                text = { Text(message) }
+            )
         }
     }
 }

@@ -171,13 +171,13 @@ fun StockInputScreen(
                 title = { Text(if (uiState.isEdit) "Edit Stok" else "Input Stok") },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFFFF9800),
-                    titleContentColor = Color.White
+                    titleContentColor = Color.Black
                 ),
                 navigationIcon = {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White,
+                        tint = Color.Black,
                         modifier = Modifier
                             .padding(12.dp)
                             .clickable { onBackClick() }
