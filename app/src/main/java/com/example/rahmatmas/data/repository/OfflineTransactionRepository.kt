@@ -8,6 +8,7 @@ import com.example.rahmatmas.data.local.dao.TransactionEntity
 import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseTransaction
+import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ class OfflineTransactionRepository(
     private val supabaseClient = SupabaseModule.client
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val photoUploadRepository = PhotoUploadRepository(context)
+    private val stockRepository = StockRepository(networkMonitor, context)
 
     // Current network status
     private var isCurrentlyOnline = false
@@ -129,6 +131,9 @@ class OfflineTransactionRepository(
     // Update transaction
     suspend fun updateTransaction(transaction: TransactionEntity): Result<Unit> {
         return try {
+            // Get the old transaction to compute stock adjustments
+            val oldTransaction = transactionDao.getTransactionById(transaction.id)
+
             val updatedTransaction = transaction.copy(
                 updatedAt = Date(),
                 isSynced = false
@@ -142,10 +147,79 @@ class OfflineTransactionRepository(
                 }
             }
 
+            // Adjust stock for edits (only when online)
+            if (isCurrentlyOnline) {
+                try {
+                    when {
+                        // Previously Jual → now not Jual: return stock
+                        oldTransaction != null &&
+                                oldTransaction.jenisTransaksi == "Jual" &&
+                                updatedTransaction.jenisTransaksi != "Jual" -> {
+                            findMatchingStock(oldTransaction)?.let { oldStock ->
+                                stockRepository.increaseStock(oldStock.id_barang, oldTransaction.jumlahBarang)
+                            }
+                        }
+                        // Previously not Jual → now Jual: reduce new stock fully
+                        (oldTransaction == null || oldTransaction.jenisTransaksi != "Jual") &&
+                                updatedTransaction.jenisTransaksi == "Jual" -> {
+                            findMatchingStock(updatedTransaction)?.let { newStock ->
+                                stockRepository.reduceStock(newStock.id_barang, updatedTransaction.jumlahBarang)
+                            }
+                        }
+                        // Jual → Jual: handle name change or delta
+                        oldTransaction != null &&
+                                oldTransaction.jenisTransaksi == "Jual" &&
+                                updatedTransaction.jenisTransaksi == "Jual" -> {
+                            if (!oldTransaction.namaBarang.equals(updatedTransaction.namaBarang, ignoreCase = true)) {
+                                // Return quantity to old stock, reduce from new stock
+                                findMatchingStock(oldTransaction)?.let { oldStock ->
+                                    stockRepository.increaseStock(oldStock.id_barang, oldTransaction.jumlahBarang)
+                                }
+                                findMatchingStock(updatedTransaction)?.let { newStock ->
+                                    stockRepository.reduceStock(newStock.id_barang, updatedTransaction.jumlahBarang)
+                                }
+                            } else {
+                                val delta = updatedTransaction.jumlahBarang - oldTransaction.jumlahBarang
+                                if (delta != 0) {
+                                    findMatchingStock(updatedTransaction)?.let { stock ->
+                                        if (delta > 0) stockRepository.reduceStock(stock.id_barang, delta)
+                                        else stockRepository.increaseStock(stock.id_barang, -delta)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Don't fail the transaction update if stock adjust fails
+                    android.util.Log.w("OfflineTransactionRepo", "Stock adjust on edit failed", e)
+                }
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("OfflineTransactionRepo", "Error updating transaction", e)
             Result.failure(e)
+        }
+    }
+
+    // Try to find a matching stock for a transaction by name (and optionally by attributes)
+    private suspend fun findMatchingStock(tx: TransactionEntity): SupabaseStock? {
+        return try {
+            val candidates = supabaseClient.from("stocks")
+                .select {
+                    filter { eq("nama_barang", tx.namaBarang) }
+                }
+                .decodeList<SupabaseStock>()
+
+            if (candidates.isEmpty()) return null
+
+            // Prefer exact match on kadar_emas, then closest by berat_emas
+            val sameKadar = candidates.filter { it.kadar_emas.equals(tx.kadarEmas, ignoreCase = true) }
+            val pool = if (sameKadar.isNotEmpty()) sameKadar else candidates
+            pool.minByOrNull { kotlin.math.abs(it.berat_emas - tx.beratEmas) }
+        } catch (e: Exception) {
+            Log.w("OfflineTransactionRepo", "Failed to find matching stock for ${tx.namaBarang}", e)
+            null
         }
     }
 
@@ -207,9 +281,12 @@ class OfflineTransactionRepository(
                     harga_dasar_per_gram = entity.hargaDasarPerGram,
                     total_harga = entity.totalHarga,
                     photo_path = cloudPhotoUrl,
-                    // ...created_at, updated_at...
+                    updated_at = java.text.SimpleDateFormat(
+                        "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                        java.util.Locale.getDefault()
+                    ).format(java.util.Date())
                 )
-                supabaseClient.from("transactions").insert(supabaseTransaction)
+                supabaseClient.from("transactions").upsert(supabaseTransaction)
                 // Update Room: mark as synced
                 transactionDao.updateTransaction(entity.copy(isSynced = true))
             }
@@ -253,9 +330,12 @@ class OfflineTransactionRepository(
                 harga_dasar_per_gram = transaction.hargaDasarPerGram,
                 total_harga = transaction.totalHarga,
                 photo_path = finalPhotoUrl,
-                // ...created_at, updated_at...
+                updated_at = java.text.SimpleDateFormat(
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                    java.util.Locale.getDefault()
+                ).format(java.util.Date())
             )
-            supabaseClient.from("transactions").insert(supabaseTransaction)
+            supabaseClient.from("transactions").upsert(supabaseTransaction)
             transactionDao.updateTransaction(transaction.copy(isSynced = true))
             Log.d("OfflineTransactionRepo", "Successfully synced single transaction: ${transaction.id}")
             Result.success(Unit)

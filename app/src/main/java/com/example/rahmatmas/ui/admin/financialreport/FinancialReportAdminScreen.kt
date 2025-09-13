@@ -381,7 +381,7 @@ private fun StatisticsCardsRow(
     ) {
         StatCard(
             modifier = Modifier.weight(1f),
-            title = "Keuntungan",
+            title = "Pendapatan",
             value = formatCurrency(profit),
             color = if (profit >= 0) PrimaryGreen else Color(0xFFEF4444),
             icon = if (profit >= 0) painterResource(R.drawable.baseline_trending_up_24) else painterResource(

@@ -23,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Badge
@@ -50,7 +50,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -96,6 +98,9 @@ fun TransactionHistoryScreen(
             viewModel.clearSnackbarMessage()
         }
     }
+
+    // State for editing dialog
+    var editingTransaction by remember { mutableStateOf<TransactionEntity?>(null) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -501,13 +506,25 @@ fun TransactionHistoryScreen(
                             isSelected = uiState.selectedIds.contains(transaction.id),
                             onSelectedChange = { viewModel.toggleSelect(transaction.id) },
                             onExportClick = { viewModel.exportSingleToPdf(transaction) },
-                            onDeleteClick = { viewModel.deleteTransaction(transaction.id) }
+                            onEditClick = { editingTransaction = transaction }
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
+    }
+
+    // Edit dialog
+    editingTransaction?.let { tx ->
+        EditTransactionDialog(
+            initial = tx,
+            onDismiss = { editingTransaction = null },
+            onSave = { updated ->
+                viewModel.updateTransaction(updated)
+                editingTransaction = null
+            }
+        )
     }
 }
 
@@ -518,7 +535,7 @@ fun TransactionItem(
     isSelected: Boolean,
     onSelectedChange: () -> Unit,
     onExportClick: () -> Unit,
-    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("id", "ID"))
@@ -695,19 +712,19 @@ fun TransactionItem(
                     }
 
                     OutlinedButton(
-                        onClick = onDeleteClick,
+                        onClick = onEditClick,
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFDC2626)
+                            contentColor = Color(0xFF0D9488)
                         ),
                         modifier = Modifier.height(32.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Delete,
+                            imageVector = Icons.Default.Edit,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Hapus", fontSize = 11.sp)
+                        Text(text = "Edit", fontSize = 11.sp)
                     }
                 }
             }
@@ -715,6 +732,115 @@ fun TransactionItem(
     }
 }
 
+
+@Composable
+private fun EditTransactionDialog(
+    initial: TransactionEntity,
+    onDismiss: () -> Unit,
+    onSave: (TransactionEntity) -> Unit
+) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+
+    var nama by remember { androidx.compose.runtime.mutableStateOf(initial.namaBarang) }
+    var jumlah by remember { androidx.compose.runtime.mutableStateOf(initial.jumlahBarang.toString()) }
+    var kadar by remember { androidx.compose.runtime.mutableStateOf(initial.kadarEmas) }
+    var jenis by remember { androidx.compose.runtime.mutableStateOf(initial.jenisTransaksi) }
+    var berat by remember { androidx.compose.runtime.mutableStateOf(initial.beratEmas.toString()) }
+    var ongkos by remember { androidx.compose.runtime.mutableStateOf(initial.ongkos.toString()) }
+    var hargaDasar by remember { androidx.compose.runtime.mutableStateOf(initial.hargaDasarPerGram.toString()) }
+
+    val computedTotal = run {
+        val h = hargaDasar.toDoubleOrNull() ?: initial.hargaDasarPerGram
+        val b = berat.toDoubleOrNull() ?: initial.beratEmas
+        val j = jumlah.toIntOrNull() ?: initial.jumlahBarang
+        h * b * j
+    }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Transaksi") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = nama,
+                    onValueChange = { nama = it },
+                    label = { Text("Nama Barang") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = jumlah,
+                    onValueChange = { jumlah = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Jumlah") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = kadar,
+                    onValueChange = { kadar = it },
+                    label = { Text("Kadar Emas") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = jenis,
+                    onValueChange = { jenis = it },
+                    label = { Text("Jenis Transaksi") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = berat,
+                    onValueChange = { new ->
+                        berat = new.filter { it.isDigit() || it == '.' }
+                    },
+                    label = { Text("Berat (gram)") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = ongkos,
+                    onValueChange = { ongkos = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                    label = { Text("Ongkos/gram") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = hargaDasar,
+                    onValueChange = { hargaDasar = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                    label = { Text("Harga Dasar/gram") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Total (otomatis): ${currencyFormat.format(computedTotal).replace("Rp", "Rp ")}",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val updated = initial.copy(
+                    namaBarang = nama.ifBlank { initial.namaBarang },
+                    jumlahBarang = jumlah.toIntOrNull() ?: initial.jumlahBarang,
+                    kadarEmas = kadar.ifBlank { initial.kadarEmas },
+                    jenisTransaksi = jenis.ifBlank { initial.jenisTransaksi },
+                    beratEmas = berat.toDoubleOrNull() ?: initial.beratEmas,
+                    ongkos = ongkos.toDoubleOrNull() ?: initial.ongkos,
+                    hargaDasarPerGram = hargaDasar.toDoubleOrNull() ?: initial.hargaDasarPerGram,
+                    totalHarga = computedTotal
+                )
+                onSave(updated)
+            }) {
+                Text("Simpan")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) { Text("Batal") }
+        }
+    )
+}
 
 @Composable
 private fun DetailItem(
