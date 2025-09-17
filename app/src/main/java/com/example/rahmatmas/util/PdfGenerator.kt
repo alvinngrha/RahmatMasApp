@@ -2,9 +2,12 @@ package com.example.rahmatmas.util
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
@@ -19,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -256,84 +260,139 @@ class PdfGenerator(private val context: Context) {
 
     //Draw single transaction receipt content
     private fun drawTransactionReceipt(canvas: Canvas, transaction: TransactionEntity) {
-        val paint = Paint().apply {
+        // Common paints
+        val basePaint = Paint().apply {
             color = Color.BLACK
-            textSize = 14f
+            textSize = 12f
             isAntiAlias = true
         }
 
         val titlePaint = Paint().apply {
             color = Color.BLACK
-            textSize = 18f
+            textSize = 20f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
 
         val headerPaint = Paint().apply {
             color = Color.BLACK
-            textSize = 16f
+            textSize = 14f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
 
-        var yPosition = MARGIN + 30f
+        val mutedPaint = Paint().apply {
+            color = Color.DKGRAY
+            textSize = 11f
+            isAntiAlias = true
+        }
 
-        // Title
-        canvas.drawText("STRUK TRANSAKSI", MARGIN.toFloat(), yPosition, titlePaint)
-        yPosition += 40f
+        val accentPaint = Paint().apply {
+            color = Color.rgb(212, 175, 55) // gold-like accent
+            strokeWidth = 2.5f
+            isAntiAlias = true
+        }
 
-        // Store info
-        canvas.drawText("Toko Emas Rahmat Mas", MARGIN.toFloat(), yPosition, headerPaint)
-        yPosition += 25f
-        canvas.drawText("Jl. Contoh Alamat No. 123", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 20f
-        canvas.drawText("Telp: 0812-3456-7890", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 40f
+        // Draw watermark first (behind content)
+        drawWatermark(canvas, "Toko Emas Rahmat Baru")
 
-        // Transaction details
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale("id", "ID"))
         val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
 
-        canvas.drawText("ID Transaksi: ${transaction.id}", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Tanggal: ${dateFormat.format(transaction.createdAt)}", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Jenis: ${transaction.jenisTransaksi}", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 40f
+        var y = MARGIN + 28f
 
-        // Item details
-        canvas.drawText("DETAIL BARANG", MARGIN.toFloat(), yPosition, headerPaint)
-        yPosition += 30f
+        // Header
+        canvas.drawText("NOTA TRANSAKSI", MARGIN.toFloat(), y, titlePaint)
+        y += 26f
+        canvas.drawText("Toko Emas Rahmat Mas", MARGIN.toFloat(), y, headerPaint)
+        y += 18f
+        canvas.drawText("Jl. Contoh Alamat No. 123 | Telp: 0812-3456-7890", MARGIN.toFloat(), y, mutedPaint)
+        y += 10f
+        canvas.drawLine(MARGIN.toFloat(), y, (PAGE_WIDTH - MARGIN).toFloat(), y, accentPaint)
+        y += 18f
 
-        canvas.drawText("Nama Barang: ${transaction.namaBarang}", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Jumlah: ${transaction.jumlahBarang} pcs", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Kadar Emas: ${transaction.kadarEmas}", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Berat Emas: ${transaction.beratEmas} gram", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Harga Dasar: ${currencyFormat.format(transaction.hargaDasarPerGram)}/gram", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Ongkos: ${currencyFormat.format(transaction.ongkos)}/gram", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 40f
+        // Transaction meta
+        canvas.drawText("ID Transaksi:", MARGIN.toFloat(), y, headerPaint)
+        canvas.drawText(transaction.id, (MARGIN + 110).toFloat(), y, basePaint)
+        y += 18f
+        canvas.drawText("Tanggal:", MARGIN.toFloat(), y, headerPaint)
+        canvas.drawText(dateFormat.format(transaction.createdAt), (MARGIN + 110).toFloat(), y, basePaint)
+        y += 18f
+        canvas.drawText("Jenis:", MARGIN.toFloat(), y, headerPaint)
+        canvas.drawText(transaction.jenisTransaksi, (MARGIN + 110).toFloat(), y, basePaint)
+        y += 24f
 
-        // Total
-        canvas.drawText("TOTAL HARGA", MARGIN.toFloat(), yPosition, headerPaint)
-        yPosition += 30f
+        // Item section title
+        canvas.drawText("Detail Barang", MARGIN.toFloat(), y, headerPaint)
+        y += 12f
+
+        // Card background for item section
+        val cardTop = y
+        val cardLeft = MARGIN.toFloat()
+        val cardRight = (PAGE_WIDTH - MARGIN).toFloat()
+        val photoSize = 120f
+        val cardBottom = cardTop + photoSize + 60f
+
+        // Optional light border
+        val borderPaint = Paint().apply {
+            color = Color.LTGRAY
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f
+            isAntiAlias = true
+        }
+        canvas.drawRect(cardLeft, cardTop, cardRight, cardBottom, borderPaint)
+
+        // Photo
+        val photoRect = RectF(cardLeft + 12f, cardTop + 12f, cardLeft + 12f + photoSize, cardTop + 12f + photoSize)
+        drawProductPhoto(canvas, transaction.photoPath, photoRect)
+
+        // Item details (right of photo)
+        val textX = photoRect.right + 14f
+        var textY = cardTop + 22f
+
+        drawLabelValue(canvas, "Nama Barang", transaction.namaBarang, textX, textY, headerPaint, basePaint)
+        textY += 20f
+        drawLabelValue(canvas, "Kadar Emas", transaction.kadarEmas, textX, textY, headerPaint, basePaint)
+        textY += 20f
+        drawLabelValue(canvas, "Berat Emas", "${transaction.beratEmas} gram", textX, textY, headerPaint, basePaint)
+        textY += 20f
+        drawLabelValue(canvas, "Jumlah", "${transaction.jumlahBarang} pcs", textX, textY, headerPaint, basePaint)
+        textY += 20f
+        drawLabelValue(canvas, "Harga Dasar", "${currencyFormat.format(transaction.hargaDasarPerGram)}/gram", textX, textY, headerPaint, basePaint)
+        textY += 20f
+        drawLabelValue(canvas, "Ongkos", "${currencyFormat.format(transaction.ongkos)}/gram", textX, textY, headerPaint, basePaint)
+
+        // Totals box
+        val totalsTop = photoRect.bottom + 18f
+        val totalsLeft = cardLeft + 12f
+        val totalsRight = cardRight - 12f
+        val lineY = totalsTop + 44f
+
+        // Subtotal, Ongkos, Grand total calculations
+        val subtotal = transaction.hargaDasarPerGram * transaction.beratEmas * transaction.jumlahBarang
+        val ongkosTotal = transaction.ongkos * transaction.beratEmas * transaction.jumlahBarang
+        val grandTotal = subtotal + ongkosTotal
+
+        canvas.drawLine(totalsLeft, totalsTop, totalsRight, totalsTop, borderPaint)
+        canvas.drawText("Subtotal", totalsLeft, totalsTop + 16f, headerPaint)
+        canvas.drawText(currencyFormat.format(subtotal).replace("Rp", "Rp "), totalsRight - 180f, totalsTop + 16f, headerPaint)
+        canvas.drawText("Ongkos", totalsLeft, totalsTop + 34f, basePaint)
+        canvas.drawText(currencyFormat.format(ongkosTotal).replace("Rp", "Rp "), totalsRight - 180f, totalsTop + 34f, basePaint)
+        canvas.drawLine(totalsLeft, lineY, totalsRight, lineY, borderPaint)
+
         val totalPaint = Paint().apply {
             color = Color.BLACK
-            textSize = 20f
+            textSize = 18f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
-        canvas.drawText(currencyFormat.format(transaction.totalHarga).replace("Rp", "Rp "), MARGIN.toFloat(), yPosition, totalPaint)
-        yPosition += 50f
+        canvas.drawText("Total Harga", totalsLeft, lineY + 22f, totalPaint)
+        canvas.drawText(currencyFormat.format(grandTotal).replace("Rp", "Rp "), totalsRight - 200f, lineY + 22f, totalPaint)
 
-        // Footer
-        canvas.drawText("Terima kasih atas kepercayaan Anda", MARGIN.toFloat(), yPosition, paint)
-        yPosition += 25f
-        canvas.drawText("Barang yang sudah dibeli tidak dapat dikembalikan", MARGIN.toFloat(), yPosition, paint)
+        // Footer note
+        val footerY = cardBottom + 80f
+        canvas.drawText("Terima kasih atas kepercayaan Anda", MARGIN.toFloat(), footerY, basePaint)
+        canvas.drawText("Barang yang sudah dibeli tidak dapat dikembalikan", MARGIN.toFloat(), footerY + 18f, mutedPaint)
     }
 
 
@@ -345,6 +404,9 @@ class PdfGenerator(private val context: Context) {
         pageNumber: Int,
         totalPages: Int
     ) {
+        // Watermark on report pages as well
+        drawWatermark(canvas, "Toko Emas Rahmat Baru")
+
         val paint = Paint().apply {
             color = Color.BLACK
             textSize = 12f
@@ -405,5 +467,115 @@ class PdfGenerator(private val context: Context) {
 
         // Page number
         canvas.drawText("Halaman $pageNumber dari $totalPages", (PAGE_WIDTH - MARGIN - 100).toFloat(), (PAGE_HEIGHT - MARGIN).toFloat(), paint)
+    }
+
+    private fun drawLabelValue(
+        canvas: Canvas,
+        label: String,
+        value: String,
+        x: Float,
+        y: Float,
+        labelPaint: Paint,
+        valuePaint: Paint
+    ) {
+        canvas.drawText(label + ":", x, y, labelPaint)
+        canvas.drawText(value, x + 120f, y, valuePaint)
+    }
+
+    private fun drawWatermark(canvas: Canvas, text: String) {
+        val paint = Paint().apply {
+            color = Color.LTGRAY
+            textSize = 48f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            alpha = 40 // subtle watermark
+            isAntiAlias = true
+        }
+        val centerX = PAGE_WIDTH / 2f
+        val centerY = PAGE_HEIGHT / 2f
+        val textWidth = paint.measureText(text)
+        val fm = paint.fontMetrics
+        val textHeight = fm.bottom - fm.top
+
+        canvas.save()
+        canvas.translate(centerX, centerY)
+        canvas.rotate(-30f)
+        canvas.drawText(text, -textWidth / 2, textHeight / 4, paint)
+        canvas.restore()
+    }
+
+    private fun drawProductPhoto(canvas: Canvas, path: String?, destRect: RectF) {
+        val paint = Paint().apply { isAntiAlias = true }
+        val bmp = loadBitmap(path)
+        if (bmp != null) {
+            canvas.drawBitmap(bmp, null, destRect, paint)
+            bmp.recycle()
+        } else {
+            // Placeholder border and text
+            val border = Paint().apply {
+                color = Color.LTGRAY
+                style = Paint.Style.STROKE
+                strokeWidth = 1.5f
+                isAntiAlias = true
+            }
+            canvas.drawRect(destRect, border)
+            val tp = Paint().apply {
+                color = Color.GRAY
+                textSize = 11f
+                isAntiAlias = true
+            }
+            val placeholder = "Foto Barang"
+            val w = tp.measureText(placeholder)
+            canvas.drawText(placeholder, destRect.centerX() - w / 2, destRect.centerY(), tp)
+        }
+    }
+
+    private fun loadBitmap(path: String?): Bitmap? {
+        if (path.isNullOrBlank()) return null
+        return try {
+            val uri = Uri.parse(path)
+            when (uri.scheme) {
+                "content" -> context.contentResolver.openInputStream(uri)?.use { input ->
+                    BitmapFactory.decodeStream(input)
+                }
+                "file" -> BitmapFactory.decodeFile(uri.path)
+                else -> {
+                    if (path.startsWith("http://") || path.startsWith("https://")) {
+                        // Try cache first
+                        val cacheDir = File(context.filesDir, "pdf_image_cache").apply { if (!exists()) mkdirs() }
+                        val cacheFile = File(cacheDir, md5(path) + ".bin")
+                        if (cacheFile.exists() && cacheFile.length() > 0) {
+                            BitmapFactory.decodeFile(cacheFile.absolutePath)
+                        } else {
+                            try {
+                                val url = java.net.URL(path)
+                                val conn = url.openConnection().apply {
+                                    connectTimeout = 5000
+                                    readTimeout = 5000
+                                }
+                                conn.getInputStream().use { input ->
+                                    val bytes = input.readBytes()
+                                    // Save to cache for future offline use
+                                    FileOutputStream(cacheFile).use { it.write(bytes) }
+                                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                }
+                            } catch (_: Exception) {
+                                null
+                            }
+                        }
+                    } else {
+                        // Treat as raw file path if no scheme
+                        BitmapFactory.decodeFile(path)
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun md5(input: String): String {
+        val md = MessageDigest.getInstance("MD5")
+        val digest = md.digest(input.toByteArray())
+        return digest.joinToString("") { "%02x".format(it) }
     }
 }

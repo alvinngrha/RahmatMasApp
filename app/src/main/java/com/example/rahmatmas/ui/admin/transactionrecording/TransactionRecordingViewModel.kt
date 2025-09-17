@@ -9,6 +9,7 @@ import com.example.rahmatmas.data.local.dao.TransactionEntity
 import com.example.rahmatmas.data.local.db.AppDatabase
 import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.GoldPriceRepository
+import com.example.rahmatmas.data.repository.PhotoUploadRepository
 import com.example.rahmatmas.data.repository.OfflineTransactionRepository
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
@@ -69,6 +70,7 @@ class TransactionRecordingViewModel(
     private val stockRepository = StockRepository(networkMonitor, context)
     private val goldPriceRepository = GoldPriceRepository()
     private val pdfGenerator = PdfGenerator(context)
+    private val photoUploadRepository = PhotoUploadRepository(context)
 
     private val _transactionUiState = MutableStateFlow(TransactionUiState())
     val transactionUiState: StateFlow<TransactionUiState> = _transactionUiState.asStateFlow()
@@ -274,9 +276,20 @@ class TransactionRecordingViewModel(
         updateBeratEmas(stock.berat_emas.toString())
         updateOngkos(stock.ongkos_per_gram.toLong().toString())
 
-        // Set photo if available
+        // Set photo if available, and prefetch a local copy when online for offline-first
         try {
-            stock.photo_path?.let { url -> setPhotoUri(Uri.parse(url)) }
+            stock.photo_path?.let { url ->
+                setPhotoUri(Uri.parse(url))
+                if (isCurrentlyOnline && (url.startsWith("http://") || url.startsWith("https://"))) {
+                    viewModelScope.launch {
+                        val txId = _transactionUiState.value.idTransaksi.ifBlank { "TMP-${stock.id_barang}" }
+                        val local = photoUploadRepository.downloadUrlToLocal(url, txId).getOrNull()
+                        if (local != null) {
+                            setPhotoUri(Uri.parse("file://$local"))
+                        }
+                    }
+                }
+            }
         } catch (_: Exception) { /* ignore bad uri */ }
 
         // Calculate harga dasar per gram using current gold price

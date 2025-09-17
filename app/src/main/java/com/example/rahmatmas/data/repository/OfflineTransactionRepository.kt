@@ -370,6 +370,13 @@ class OfflineTransactionRepository(
     ): Result<String> {
         return try {
             val newTransactionId = idTransaksi.ifBlank { "RB-${UUID.randomUUID()}" }
+            // Prefer saving a local copy if the photo is a remote URL and we are online
+            val localPhotoPath: String? = if (!photoUrl.isNullOrBlank() && photoUrl.startsWith("http") && isCurrentlyOnline) {
+                try {
+                    photoUploadRepository.downloadUrlToLocal(photoUrl, newTransactionId).getOrNull()
+                } catch (_: Exception) { null }
+            } else null
+
             val transaction = TransactionEntity(
                 id = newTransactionId,
                 namaBarang = namaBarang,
@@ -380,7 +387,7 @@ class OfflineTransactionRepository(
                 ongkos = ongkos,
                 hargaDasarPerGram = hargaDasarPerGram,
                 totalHarga = totalHarga,
-                photoPath = photoUrl,
+                photoPath = localPhotoPath ?: photoUrl,
                 createdAt = Date(),
                 updatedAt = Date(),
                 isSynced = false,

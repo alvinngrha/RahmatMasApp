@@ -133,10 +133,15 @@ class PhotoUploadRepository(private val context: Context) {
         isOnline: Boolean = true
     ): Result<PhotoUploadResult> {
         return try {
-            // If the URI is already a remote URL (e.g., from stock photo), skip upload
             val scheme = photoUri.scheme?.lowercase()
             if (scheme == "http" || scheme == "https") {
-                return Result.success(PhotoUploadResult(localPath = null, cloudUrl = photoUri.toString()))
+                // Remote URL (e.g., Supabase public URL). Try to save a local copy for offline-first.
+                val remoteUrl = photoUri.toString()
+                val localPath = if (isOnline) {
+                    downloadUrlToLocal(remoteUrl, transactionId).getOrNull()
+                } else null
+                // Keep remote URL as cloud reference; localPath may be null if offline
+                return Result.success(PhotoUploadResult(localPath = localPath, cloudUrl = remoteUrl))
             }
 
             // Always save locally first
@@ -161,6 +166,32 @@ class PhotoUploadRepository(private val context: Context) {
 
         } catch (e: Exception) {
             Log.e("PhotoUpload", "Error in uploadAndSavePhoto", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Download remote image URL to internal storage for offline use.
+     */
+    suspend fun downloadUrlToLocal(url: String, transactionId: String): Result<String> {
+        return try {
+            withContext(Dispatchers.IO) {
+                val extension = url.substringAfterLast('.', missingDelimiterValue = "jpg").takeIf { it.length in 3..4 } ?: "jpg"
+                val fileName = "${transactionId}_${System.currentTimeMillis()}.$extension"
+                val photosDir = File(context.filesDir, "transaction_photos").apply { if (!exists()) mkdirs() }
+                val localFile = File(photosDir, fileName)
+
+                val connection = java.net.URL(url).openConnection().apply {
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                }
+                connection.getInputStream().use { input ->
+                    FileOutputStream(localFile).use { output -> input.copyTo(output) }
+                }
+                Result.success(localFile.absolutePath)
+            }
+        } catch (e: Exception) {
+            Log.w("PhotoUpload", "Failed to download remote photo to local", e)
             Result.failure(e)
         }
     }
