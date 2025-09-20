@@ -69,7 +69,7 @@ class PhotoUploadRepository(private val context: Context) {
                 // Upload to Supabase Storage
                 val bucket = supabaseClient.storage.from(bucketNameStock)
                 bucket.upload(fileName, photoBytes) {
-                    upsert = false
+                    upsert = true
                 }
 
                 // Get public URL
