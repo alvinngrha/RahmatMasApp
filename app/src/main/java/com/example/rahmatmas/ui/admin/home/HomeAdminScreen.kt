@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -48,7 +49,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.datastore.AdminAuthManager
-import com.example.rahmatmas.data.repository.GoldPriceRepository
 
 @Composable
 fun HomeAdminScreen(
@@ -61,17 +61,18 @@ fun HomeAdminScreen(
     onGoToOnlineSale: () -> Unit
 ) {
     val context = LocalContext.current
-//    val networkMonitor = NetworkMonitor(context)
-    val adminAuthManager = remember { AdminAuthManager(context) }
+    val appContext = context.applicationContext
+    val adminAuthManager = remember { AdminAuthManager(appContext) }
     val adminUsername by adminAuthManager.getAdminUsername().collectAsState(initial = "")
 
     val viewModel: HomeAdminViewModel = viewModel(
         factory = HomeAdminViewModelFactory(
-            adminAuthManager = AdminAuthManager(LocalContext.current),
-            goldPriceRepository = GoldPriceRepository()
+            context = appContext,
+            adminAuthManager = adminAuthManager
         )
     )
     val goldPriceState by viewModel.goldPriceState.collectAsState()
+    val recentActivityState by viewModel.recentActivityState.collectAsState()
 
     // State untuk dialog logout
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -464,94 +465,49 @@ fun HomeAdminScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Aktivitas Terbaru",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Aktivitas Terbaru",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                IconButton(
+                    onClick = { viewModel.refreshActivities() },
+                    enabled = !recentActivityState.isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Muat ulang aktivitas",
+                        tint = if (recentActivityState.isLoading) Color.Gray.copy(alpha = 0.6f) else Color(0xFFFF9800)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            RecentActivityCard(
+                state = recentActivityState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .shadow(4.dp,
-                        shape = RoundedCornerShape(15.dp),
-                        clip = false)
-                    .align(Alignment.CenterHorizontally)
-                    .background(
-                        Color.White,
-                        shape = RoundedCornerShape(15.dp)
-                    ),
-            ) {
-                Column(
+            recentActivityState.error?.let { errorMessage ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage,
+                    color = Color(0xFFD32F2F),
+                    fontSize = 12.sp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
-                ) {
-                    Text(
-                        text = "Transaksi Terbaru",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        lineHeight = 8.sp
-                    )
-
-                    Text(
-                        text = "Cincin emas bunga - 1.000.000",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    HorizontalDivider(
-                        thickness = 1.dp,
-                        color = Color.LightGray.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Stok Diperbarui",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        lineHeight = 8.sp
-                    )
-
-                    Text(
-                        text = "Cincin emas bunga - 5 pcs",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    HorizontalDivider(
-                        thickness = 1.dp,
-                        color = Color.LightGray.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Pesanan Online",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        lineHeight = 8.sp
-                    )
-
-                    Text(
-                        text = "Agus - Cincin emas bunga",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray
-                    )
-                }
+                        .padding(horizontal = 24.dp)
+                )
             }
         }
 
@@ -583,5 +539,156 @@ fun HomeAdminScreen(
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun RecentActivityCard(
+    state: RecentActivityUiState,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .shadow(6.dp, RoundedCornerShape(18.dp), clip = false)
+            .background(Color.White, shape = RoundedCornerShape(18.dp))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp)
+        ) {
+            if (state.activities.isEmpty()) {
+                Text(
+                    text = if (state.isLoading) "Memuat aktivitas..." else "Belum ada aktivitas yang bisa ditampilkan",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                state.activities.forEachIndexed { index, activity ->
+                    ActivityRow(activity)
+                    if (index < state.activities.lastIndex) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color(0xFFE5E7EB)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+        }
+
+        if (state.isLoading) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(3.dp),
+                color = Color(0xFFFF9800),
+                trackColor = Color(0xFFFBE8D5)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActivityRow(activity: RecentActivityItem) {
+    val accentColor = activityAccentColor(activity.type)
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        ActivityIcon(activity, accentColor)
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = activity.title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black
+            )
+            Text(
+                text = activity.subtitle,
+                fontSize = 11.sp,
+                color = Color(0xFF6B7280),
+                lineHeight = 14.sp
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center
+        ) {
+            activity.highlight?.let {
+                Box(
+                    modifier = Modifier
+                        .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = it,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = accentColor
+                    )
+                }
+            }
+
+            activity.timestamp?.let {
+                Text(
+                    text = it,
+                    fontSize = 10.sp,
+                    color = Color(0xFF9CA3AF),
+                    modifier = Modifier.padding(top = if (activity.highlight != null) 6.dp else 0.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityIcon(activity: RecentActivityItem, accentColor: Color) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .background(accentColor.copy(alpha = 0.15f), shape = RoundedCornerShape(14.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        when (activity.type) {
+            ActivityType.TRANSACTION -> Icon(
+                painter = painterResource(R.drawable.logo_note),
+                contentDescription = activity.title,
+                tint = accentColor,
+                modifier = Modifier.size(24.dp)
+            )
+
+            ActivityType.STOCK -> Icon(
+                painter = painterResource(R.drawable.logo_inventory),
+                contentDescription = activity.title,
+                tint = accentColor,
+                modifier = Modifier.size(24.dp)
+            )
+
+            ActivityType.ONLINE_ORDER -> Icon(
+                imageVector = Icons.Default.ShoppingCart,
+                contentDescription = activity.title,
+                tint = accentColor,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+private fun activityAccentColor(type: ActivityType): Color {
+    return when (type) {
+        ActivityType.TRANSACTION -> Color(0xFF2563EB)
+        ActivityType.STOCK -> Color(0xFF10B981)
+        ActivityType.ONLINE_ORDER -> Color(0xFFEA580C)
     }
 }

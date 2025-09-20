@@ -9,6 +9,7 @@ import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.CancellationException
 import java.util.UUID
 
 // Data class for dynamic price calculation
@@ -33,6 +34,7 @@ class StockRepository(
                 .decodeList<SupabaseStock>()
             emit(response.sortedByDescending { it.created_at })
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e("StockRepository", "Error fetching stocks", e)
             emit(emptyList())
         }
@@ -56,6 +58,7 @@ class StockRepository(
 
             emit(filteredStocks.sortedByDescending { it.created_at })
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e("StockRepository", "Error searching stocks", e)
             emit(emptyList())
         }
