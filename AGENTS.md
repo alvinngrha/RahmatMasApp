@@ -1,51 +1,50 @@
 # Repository Guidelines
 
-This guide helps contributors build, test, and ship confidently in this Android + Supabase project.
+Follow these notes when contributing; they reflect current repo standards.
 
 ## Project Structure & Module Organization
-- Android app: `app/` — sources `app/src/main/java/`, resources `app/src/main/res/`, debug Firebase `app/src/google-services.json`.
-- Tests: unit `app/src/test/`, instrumentation/UI `app/src/androidTest/`.
-- Supabase Edge Function (TypeScript): `supabase/functions/send-push/`.
-- Build config: root `build.gradle.kts`, `settings.gradle.kts`; app module `app/build.gradle.kts`.
-- Package by feature: `ui/admin/...`, `ui/customer/...`, `data/...`.
+- `app/src/main/java/`: Kotlin sources by feature (e.g., `ui/admin/...`, `ui/customer/...`).
+- `app/src/main/res/`: Compose resources, theming, and manifests.
+- `app/src/test/` and `app/src/androidTest/`: JVM unit suites and instrumentation/Compose UI suites.
+- `supabase/functions/send-push/`: Supabase Edge Function for push notifications.
+- Root `build.gradle.kts` and `settings.gradle.kts`: orchestrate modules and dependencies.
 
 ## Build, Test, and Development Commands
-- Build debug APK: `./gradlew assembleDebug` → output in `app/build/outputs/apk/debug/`.
-- Install on device/emulator: `./gradlew installDebug`.
-- Launch main activity: `adb shell am start -n com.example.rahmatmas/.MainActivity`.
-- Run unit tests: `./gradlew testDebugUnitTest`.
-- Run instrumentation/UI tests: `./gradlew connectedAndroidTest` (device/emulator required).
-- Static analysis: `./gradlew lint`.
+- `./gradlew assembleDebug`: create the debug APK in `app/build/outputs/apk/debug/`.
+- `./gradlew installDebug`: push the APK to a connected device/emulator.
+- `adb shell am start -n com.example.rahmatmas/.MainActivity`: launch the installed build.
+- `./gradlew testDebugUnitTest`: run JVM unit tests.
+- `./gradlew connectedAndroidTest`: execute instrumentation and Compose UI tests.
+- `./gradlew lint`: apply static analysis and formatting checks.
 
 ## Coding Style & Naming Conventions
-- Kotlin + Jetpack Compose (Material 3); 4‑space indent; follow official Kotlin style.
-- MVVM: one `ViewModel` per screen; immutable UI state; coroutines for side effects.
-- Names: screens `*Screen`; `*ViewModel`/`*ViewModelFactory`; data `*Repository`; Room `*Dao`/`*Entity`.
-- Composables: keep small and previewable; avoid side effects inside composables.
+- Use Kotlin style with four-space indentation, idiomatic null-safety, and Material 3 composables.
+- Keep composables small, stateless, and previewable; lift state into view models.
+- Apply MVVM naming: `*ViewModel`, `*Repository`, `*Dao`, `*Entity`, `*Screen`.
+- Prefer constructor injection and avoid tightly coupled singletons.
 
 ## Testing Guidelines
-- Frameworks: JUnit (unit), AndroidX + Compose testing (instrumentation/UI).
-- Mirror targets in names (e.g., `HomeCustomerViewModelTest`).
-- Deterministic tests; prefer fakes/mocks; avoid network in unit tests.
-- Quick runs: `./gradlew testDebugUnitTest`, `./gradlew connectedAndroidTest`.
+- Rely on JUnit and AndroidX Compose testing; mock or fake network layers.
+- Mirror test class names to targets (e.g., `HomeCustomerViewModelTest`).
+- Keep tests deterministic; guard asynchronous work with coroutines and dispatchers.
+- Run `./gradlew testDebugUnitTest` before PRs; add `connectedAndroidTest` when UI behavior changes.
 
 ## Commit & Pull Request Guidelines
-- Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`.
-- PRs include summary, linked issue, test steps, and screenshots/GIFs for UI changes.
-- Keep scope narrow; ensure build, tests, and lint are green; reference impacted paths (e.g., `app/src/main/...`, `supabase/functions/send-push/...`).
+- Write Conventional Commit messages (`feat:`, `fix:`, `refactor:`, `chore:`) with concise scopes.
+- In PRs, summarize impact, link issues, list verification steps, and attach UI captures when screens change.
+- Confirm builds, tests, and lint pass locally; note affected paths like `app/src/main/...`.
 
 ## Security & Configuration Tips
-- Keep Android SDK path in `local.properties`; never commit keystores.
-- Store Supabase URL/keys via `BuildConfig`; no production secrets in VCS.
-- Use environment‑specific or remote config; ensure `google-services.json` is non‑production for debug builds.
+- Store the Android SDK path in `local.properties`; never commit keystores or secrets.
+- Keep `google-services.json` restricted to debug credentials.
+- Inject Supabase URLs and keys through `BuildConfig` or environment-aware config files.
 
 ## Architecture Overview
-- MVVM with repositories and Room under `data/`.
-- Compose UI by feature with unidirectional data flow.
-- Coroutines handle side effects; expose immutable state to UI.
+- MVVM guides flow: repositories → view models → composables.
+- Coroutines manage async work; expose immutable UI state to the presentation layer.
+- Room entities and DAOs live under `data/`; keep repositories interface-driven for testing.
 
-## Agent‑Specific Instructions
-- Follow this file for code style, structure, and naming.
-- Keep patches minimal and focused; avoid unrelated changes.
-- Never add secrets or credentials to the repo.
-
+## Agent-Specific Instructions
+- Limit edits to necessary files and respect pre-existing changes.
+- Default to ASCII unless a file already uses Unicode.
+- Avoid irreversible operations or credential changes; document non-obvious logic with concise comments.

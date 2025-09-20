@@ -276,7 +276,13 @@ fun RahmatMasApp(
                 }
 
                 composable("profileadmin") {
-                    ProfileScreen()
+                    ProfileScreen(
+                        onLogout = {
+                            navController.navigate("logincostumer") {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        }
+                    )
                 }
 
 
