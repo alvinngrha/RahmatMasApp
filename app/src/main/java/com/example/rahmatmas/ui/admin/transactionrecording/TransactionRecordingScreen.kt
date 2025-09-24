@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -60,6 +61,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,6 +69,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.rahmatmas.R
+import com.example.rahmatmas.util.formatNumberInput
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -650,7 +653,8 @@ fun TransactionRecordingScreen(
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 if (transactionUiState.beratError != null) {
@@ -672,7 +676,7 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = transactionUiState.ongkos,
+                    value = formatNumberInput(transactionUiState.ongkos),
                     onValueChange = { viewModel.updateOngkos(it) },
                     placeholder = { Text(text = "Masukkan Ongkos", fontSize = 12.sp) },
                     singleLine = true,
@@ -688,7 +692,8 @@ fun TransactionRecordingScreen(
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 if (transactionUiState.ongkosError != null) {
@@ -710,7 +715,7 @@ fun TransactionRecordingScreen(
                 )
 
                 TextField(
-                    value = transactionUiState.hargaDasarPerGram,
+                    value = formatNumberInput(transactionUiState.hargaDasarPerGram),
                     onValueChange = { viewModel.updateHargaDasarPerGram(it) },
                     placeholder = {
                         Text(
@@ -731,7 +736,8 @@ fun TransactionRecordingScreen(
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 if (transactionUiState.hargaDasarError != null) {

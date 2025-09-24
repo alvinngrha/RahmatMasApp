@@ -72,6 +72,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.rahmatmas.R
+import com.example.rahmatmas.util.formatNumberInput
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -438,11 +439,11 @@ fun StockInputScreen(
                 )
 
                 OutlinedTextField(
-                    value = uiState.ongkosPerGram,
+                    value = formatNumberInput(uiState.ongkosPerGram),
                     onValueChange = viewModel::updateOngkos,
                     label = { Text("Ongkos Per Gram") },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = uiState.validationErrors.containsKey("ongkos"),
                     shape = RoundedCornerShape(12.dp),
                     supportingText = {

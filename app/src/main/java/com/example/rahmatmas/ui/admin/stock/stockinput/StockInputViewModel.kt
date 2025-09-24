@@ -105,9 +105,16 @@ class StockInputViewModel(
         }
     }
 
-    fun updateOngkos(value: String) { // Changed from updateOngkosPerGram
-        if (value.isEmpty() || value.matches(Regex("^\\d*\\.?\\d*$"))) {
-            _uiState.value = _uiState.value.copy(ongkosPerGram = value)
+    fun updateOngkos(value: String) {
+        if (value.isEmpty()) {
+            _uiState.value = _uiState.value.copy(ongkosPerGram = "")
+            clearValidationError("ongkos")
+            return
+        }
+
+        val digitsOnly = value.filter(Char::isDigit)
+        if (digitsOnly.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(ongkosPerGram = digitsOnly)
             clearValidationError("ongkos")
         }
     }
@@ -124,7 +131,7 @@ class StockInputViewModel(
             kadarEmas = stock.kadar_emas,
             kadarPersen = stock.kadar_persen,
             beratEmas = stock.berat_emas.toString(),
-            ongkosPerGram = stock.ongkos_per_gram.toString(),
+            ongkosPerGram = stock.ongkos_per_gram.toLong().toString(),
             existingPhotoUrl = stock.photo_path,
             isEdit = true
         )

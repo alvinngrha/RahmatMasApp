@@ -173,37 +173,36 @@ class TransactionRecordingViewModel(
     }
 
     fun updateHargaDasarPerGram(hargaDasar: String) {
-        if (hargaDasar.all { it.isDigit() } || hargaDasar.isEmpty()) {
-            _transactionUiState.value =
-                _transactionUiState.value.copy(hargaDasarPerGram = hargaDasar, hargaDasarError = null)
+        val digitsOnly = hargaDasar.filter(Char::isDigit)
+        val hasNonDigit = hargaDasar.any { !it.isDigit() }
 
-            // Hitung ulang total harga jika berat emas sudah diisi
-            if (_transactionUiState.value.beratEmas.isNotEmpty()) {
-                calculateTotalHarga()
+        _transactionUiState.value = _transactionUiState.value.copy(
+            hargaDasarPerGram = digitsOnly,
+            hargaDasarError = if (digitsOnly.isEmpty() && hargaDasar.isNotEmpty() && hasNonDigit) {
+                "Harga dasar harus berupa angka"
             } else {
-                _transactionUiState.value = _transactionUiState.value.copy(totalHarga = 0.0)
+                null
             }
-        } else {
-            // Tampilkan pesan error jika harga dasar tidak valid
-            _transactionUiState.value = _transactionUiState.value.copy(
-                hargaDasarPerGram = hargaDasar,
-                hargaDasarError = "Harga dasar harus berupa angka"
-            )
-        }
+        )
+
+        calculateTotalHarga()
     }
 
     // Update ongkos
     fun updateOngkos(ongkos: String) {
-        if (ongkos.all { it.isDigit() } || ongkos.isEmpty()) {
-            _transactionUiState.value = _transactionUiState.value.copy(ongkos = ongkos, ongkosError = null)
-            calculateTotalHarga()
-        } else {
-            // Tampilkan pesan error jika ongkos tidak valid
-            _transactionUiState.value = _transactionUiState.value.copy(
-                ongkos = ongkos,
-                ongkosError = "Ongkos harus berupa angka"
-            )
-        }
+        val digitsOnly = ongkos.filter(Char::isDigit)
+        val hasNonDigit = ongkos.any { !it.isDigit() }
+
+        _transactionUiState.value = _transactionUiState.value.copy(
+            ongkos = digitsOnly,
+            ongkosError = if (digitsOnly.isEmpty() && ongkos.isNotEmpty() && hasNonDigit) {
+                "Ongkos harus berupa angka"
+            } else {
+                null
+            }
+        )
+
+        calculateTotalHarga()
     }
 
     // Hitung total harga
