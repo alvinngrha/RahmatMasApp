@@ -115,6 +115,7 @@ fun LoginAdminScreen(
             Text(
                 text = "LOGIN ADMIN",
                 fontSize = 18.sp,
+                color = Color(0xFFFF9800),
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)

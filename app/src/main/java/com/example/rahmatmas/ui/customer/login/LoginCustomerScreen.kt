@@ -79,14 +79,14 @@ fun LoginCustomerScreen(
             Text(
                 text = "RAHMATMAS",
                 fontSize = 18.sp,
-                color = Color.Black,
+                color = Color(0xFFFF9800),
                 fontWeight = FontWeight.Bold,
             )
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "login saja dengan akun google kamu, lalu kamu bisa melihat informasi dan membeli " +
-                        "emas secara online dengan santai saja di rumah tanpa harus datang ke lokasi melalui aplikasi RahmatMas.",
+                text = "Belanja Emas, Tinggal Login Google.\n" +
+                        "Masuk ke RahmatMas pakai akun Google-mu, lalu jelajahi katalog & beli emas langsung dari rumah - cepat, aman, tanpa ribet.",
                 modifier = Modifier.padding(horizontal = 8.dp),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
