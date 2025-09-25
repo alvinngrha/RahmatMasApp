@@ -54,8 +54,8 @@ class StockInputViewModel(
 
     // Kadar persen options based on kadar emas
     val kadarPersenOptions = mapOf(
-        "700" to listOf("75%", "77%", "80%"),
-        "833" to listOf("85%", "89%"),
+        "700" to listOf("75%", "77%","78%", "79%", "80%", "81%", "82%", "83%", "84%", "85%"),
+        "833" to listOf("85%","87%","88%", "89%", "90%", "91%", "92%"),
         "999" to listOf("100%")
     )
 
