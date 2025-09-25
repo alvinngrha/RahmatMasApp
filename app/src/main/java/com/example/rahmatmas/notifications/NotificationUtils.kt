@@ -40,7 +40,7 @@ object NotificationUtils {
         val pendingIntent = PendingIntent.getActivity(context, 0, intent, pendingFlags)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.logo_rb)
+            .setSmallIcon(R.mipmap.icon_app_rahmatmas_round)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))

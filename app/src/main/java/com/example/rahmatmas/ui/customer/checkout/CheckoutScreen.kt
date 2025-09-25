@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.customer.checkout
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -33,12 +36,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,13 +72,6 @@ fun CheckoutScreen(
     LaunchedEffect(uiState.userName) {
         if (uiState.userName.isNotBlank() && name.isBlank()) {
             name = uiState.userName
-        }
-    }
-
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            onOrderPlaced()
-            viewModel.resetState()
         }
     }
 
@@ -201,6 +204,16 @@ fun CheckoutScreen(
             }
         }
     }
+
+    if (uiState.isSuccess) {
+        CheckoutSuccessDialog(
+            orderId = uiState.successOrderId,
+            onAnimationFinished = {
+                viewModel.resetState()
+                onOrderPlaced()
+            }
+        )
+    }
 }
 
 @Composable
@@ -215,5 +228,68 @@ private fun RowOption(selected: Boolean, label: String, onClick: () -> Unit) {
             colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
         )
         Text(text = label)
+    }
+}
+
+@Composable
+private fun CheckoutSuccessDialog(
+    orderId: String?,
+    onAnimationFinished: () -> Unit
+) {
+    val controller = remember { DotLottieController() }
+    val playerState by controller.currentState.collectAsState(initial = DotLottiePlayerState.INITIAL)
+    var hasFinished by remember { mutableStateOf(false) }
+
+    LaunchedEffect(playerState) {
+        if (!hasFinished && (playerState == DotLottiePlayerState.COMPLETED || playerState == DotLottiePlayerState.ERROR)) {
+            hasFinished = true
+            onAnimationFinished()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        delay(4000)
+        if (!hasFinished) {
+            hasFinished = true
+            onAnimationFinished()
+        }
+    }
+
+    Dialog(onDismissRequest = {}) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp, vertical = 28.dp)
+                    .widthIn(max = 320.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                DotLottieAnimation(
+                    modifier = Modifier.size(160.dp),
+                    source = DotLottieSource.Asset("Checkout_Success.lottie"),
+                    autoplay = true,
+                    loop = false,
+                    controller = controller
+                )
+
+                Text(
+                    text = "Checkout berhasil!",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                if (!orderId.isNullOrBlank()) {
+                    Text(
+                        text = "Kode pesanan: $orderId",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }

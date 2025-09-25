@@ -1,41 +1,27 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Kotlin source lives under `app/src/main/java/`, organized by feature (for example `ui/admin/`, `data/repository/`).
-- Shared resources such as themes, drawables, and manifest files sit in `app/src/main/res/`.
-- JVM unit tests belong in `app/src/test/`; instrumentation and Compose UI tests go in `app/src/androidTest/`.
-- Supabase Edge Functions, including push notification logic, reside in `supabase/functions/send-push/`.
+Kotlin sources reside under `app/src/main/java/`, grouped by feature (for example `ui/admin/` and `data/repository/`). Android resources, themes, and manifests live in `app/src/main/res/`. JVM tests belong in `app/src/test/`, while instrumentation and Compose UI suites stay in `app/src/androidTest/`. Supabase Edge Functions, including push logic, are under `supabase/functions/send-push/`. Keep feature modules cohesive and avoid cross-feature coupling.
 
 ## Build, Test, and Development Commands
-- `./gradlew assembleDebug` builds the debug APK into `app/build/outputs/apk/debug/` for distribution.
-- `./gradlew installDebug` installs the latest debug build onto a connected emulator or device.
-- `adb shell am start -n com.example.rahmatmas/.MainActivity` launches the installed app for manual smoke checks.
-- `./gradlew testDebugUnitTest` executes JVM unit suites; apply `--tests` to target specific classes.
-- `./gradlew connectedAndroidTest` runs instrumentation and Compose UI flows on attached hardware.
-- `./gradlew lint` enforces static analysis and formatting expectations.
+- `./gradlew assembleDebug` builds a distributable debug APK in `app/build/outputs/apk/debug/`.
+- `./gradlew installDebug` flashes the latest debug build onto a connected device or emulator.
+- `adb shell am start -n com.example.rahmatmas/.MainActivity` launches the installed debug app for smoke checks.
+- `./gradlew testDebugUnitTest` runs JVM unit tests; append `--tests SomeClassTest` to scope execution.
+- `./gradlew connectedAndroidTest` executes instrumentation and Compose UI flows.
+- `./gradlew lint` enforces static analysis, style, and formatting.
 
 ## Coding Style & Naming Conventions
-- Prefer four-space indentation, idiomatic Kotlin null-safety, and Material 3 composables.
-- Keep composables stateless and previewable; hoist state into view models named `*ViewModel`.
-- Follow MVVM naming: `*Repository`, `*Dao`, `*Entity`, `*Screen`; rely on constructor injection via the existing DI setup.
+Use four-space indentation and idiomatic Kotlin null-safety. Prefer stateless Material 3 composables and hoist state into `*ViewModel` classes supplied via existing DI. Follow MVVM names such as `*Repository`, `*Dao`, `*Entity`, and `*Screen`. Keep shared utilities in feature-specific packages; document non-obvious logic with concise comments.
 
 ## Testing Guidelines
-- Use JUnit and AndroidX Compose testing; mock or fake network boundaries for deterministic outcomes.
-- Mirror test class names to their subjects (for example `HomeCustomerViewModelTest`).
-- Guard coroutine tests with test dispatchers and timeouts; maintain isolation and idempotence.
-- Run `./gradlew testDebugUnitTest` before committing; expand to `connectedAndroidTest` when UI flows change.
+Adopt JUnit with coroutine test dispatchers and AndroidX Compose testing for UI flows. Mirror test class names to their targets (e.g., `HomeCustomerViewModelTest`). Mock or fake network interactions so suites remain deterministic. Run `./gradlew testDebugUnitTest` before pushing, and schedule `./gradlew connectedAndroidTest` when behavior or UI changes impact devices.
 
 ## Commit & Pull Request Guidelines
-- Write Conventional Commits (for example `feat:`, `fix:`, `chore:`) with concise scopes and relevant issue references.
-- Confirm builds, unit tests, and lint pass locally; include verification steps and attach UI captures for visual updates.
-- Describe affected paths (e.g., `app/src/main/...`) and mention Supabase changes when applicable.
+Write Conventional Commits (`feat:`, `fix:`, `chore:`) with focused scopes and issue references. Confirm builds, tests, and lint pass locally before opening pull requests. Summarize affected paths (for example `app/src/main/...`), note Supabase function updates, and attach emulator screenshots for visual changes.
 
 ## Security & Configuration Tips
-- Keep the Android SDK path only in `local.properties`; never commit keystores or secrets.
-- Restrict `google-services.json` to debug credentials; inject Supabase keys through `BuildConfig` or environment configs.
-- Review Supabase policies regularly and rotate push credentials alongside Edge Function updates.
+Keep the Android SDK path in `local.properties`, exclude keystores, and rely on debug `google-services.json`. Inject Supabase keys through `BuildConfig` or environment configuration. Review Supabase Row Level Security policies regularly and rotate push credentials alongside Edge Function updates.
 
 ## Architecture Overview
-- MVVM structure: repositories feed view models, which expose immutable UI state to composables.
-- Coroutines coordinate async work; Room entities and DAOs live under `app/src/main/java/data/`.
-- Interfaces and dependency injection keep repositories testable, swappable, and friendly to end-to-end coverage.
+The app follows MVVM: repositories feed view models, which expose immutable UI state to composables. Coroutines orchestrate async work, while Room entities and DAOs live under `app/src/main/java/data/`. Dependency injection keeps components modular and testable; favor interface-driven design for repositories and services.

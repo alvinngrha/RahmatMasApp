@@ -52,13 +52,13 @@ class OnlineSaleAdminViewModel(
     private val _newOrders = MutableSharedFlow<SupabaseOrder>(extraBufferCapacity = 1)
     val newOrders: SharedFlow<SupabaseOrder> = _newOrders.asSharedFlow()
 
-    val tabTitles = listOf(
-        "Menunggu (${getOrdersByStatus(OrderStatus.PENDING).size})",
-        "Diproses (${getOrdersByStatus(OrderStatus.PROCESSING).size})",
-        "Dikirim (${getOrdersByStatus(OrderStatus.SHIPPING).size})",
-        "Selesai (${getOrdersByStatus(OrderStatus.COMPLETED).size})",
-        "Dibatalkan (${getOrdersByStatus(OrderStatus.CANCELLED).size})"
-    )
+//    val tabTitles = listOf(
+//        "Menunggu (${getOrdersByStatus(OrderStatus.PENDING).size})",
+//        "Diproses (${getOrdersByStatus(OrderStatus.PROCESSING).size})",
+//        "Dikirim (${getOrdersByStatus(OrderStatus.SHIPPING).size})",
+//        "Selesai (${getOrdersByStatus(OrderStatus.COMPLETED).size})",
+//        "Dibatalkan (${getOrdersByStatus(OrderStatus.CANCELLED).size})"
+//    )
 
     init {
         // Monitor network status

@@ -106,7 +106,7 @@ class OrderRepository {
             sendPushNotification(
                 userId = userId,
                 title = "Status Pesanan Kamu Diperbarui",
-                body = "Status pesanan kamu: $status,"
+                body = "Status pesanan kamu: $status"
             )
         }
 
