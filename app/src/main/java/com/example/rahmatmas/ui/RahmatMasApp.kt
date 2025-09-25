@@ -15,7 +15,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -51,6 +50,7 @@ import com.example.rahmatmas.ui.customer.checkout.CheckoutScreen
 import com.example.rahmatmas.ui.customer.home.HomeCustomerScreen
 import com.example.rahmatmas.ui.customer.login.LoginCustomerScreen
 import com.example.rahmatmas.ui.customer.orderstatus.OrderStatusScreen
+import com.example.rahmatmas.ui.splash.SplashScreen
 import kotlinx.coroutines.flow.first
 
 @Composable
@@ -90,32 +90,23 @@ fun RahmatMasApp(
                 }
             },
         ) { paddingValues ->
-            // Determine initial destination based on login status
-            LaunchedEffect(Unit) {
-                // Check admin session first (priority)
-                val isAdminSessionValid = viewModel.isSessionValid().first()
-                if (isAdminSessionValid) {
-                    navController.navigate("homeadmin") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                    return@LaunchedEffect
-                }
-
-                // Then check customer login
-                val isCustomerLoggedIn = authManager.isUserLoggedIn.first()
-                if (isCustomerLoggedIn) {
-                    navController.navigate("homecostumer") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                    return@LaunchedEffect
-                }
-            }
-
             NavHost(
                 navController = navController,
-                startDestination = "logincostumer",
+                startDestination = "splash",
                 modifier = modifier.padding(paddingValues)
             ) {
+                composable("splash") {
+                    SplashScreen(
+                        checkAdminSession = { viewModel.isSessionValid().first() },
+                        checkCustomerSession = { authManager.isUserLoggedIn.first() },
+                        onNavigate = { destination ->
+                            navController.navigate(destination) {
+                                popUpTo("splash") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
                 composable("logincostumer") {
                     LoginCustomerScreen(
                         onAdminClick = {

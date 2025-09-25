@@ -503,7 +503,8 @@ fun TransactionRecordingScreen(
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 if (transactionUiState.jumlahBarangError != null) {

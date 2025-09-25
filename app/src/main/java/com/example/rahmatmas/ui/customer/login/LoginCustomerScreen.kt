@@ -85,8 +85,8 @@ fun LoginCustomerScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "login saja dengan akun google anda, lalu anda bisa melihat informasi dan membeli " +
-                        "emas secara online tanpa harus datang ke lokasi melalui aplikasi RahmatMas.",
+                text = "login saja dengan akun google kamu, lalu kamu bisa melihat informasi dan membeli " +
+                        "emas secara online dengan santai saja di rumah tanpa harus datang ke lokasi melalui aplikasi RahmatMas.",
                 modifier = Modifier.padding(horizontal = 8.dp),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,

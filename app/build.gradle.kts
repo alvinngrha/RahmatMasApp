@@ -167,4 +167,6 @@ dependencies {
     // Network monitoring
     implementation ("androidx.lifecycle:lifecycle-process:2.9.2")
 
+    //lottie
+    implementation("com.github.LottieFiles:dotlottie-android:0.5.0")
 }

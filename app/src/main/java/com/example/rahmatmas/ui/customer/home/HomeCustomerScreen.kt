@@ -161,7 +161,7 @@ fun HomeCustomerScreen(
                 // Brand name dengan styling menarik
                 Text(
                     text = "✨ RAHMATMAS ✨",
-                    fontSize = 28.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     color = Color(0xFF2E3440),
@@ -221,7 +221,7 @@ fun HomeCustomerScreen(
                 // Menu Section
                 Text(
                     text = "Layanan Kami",
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2E3440),
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -240,7 +240,7 @@ fun HomeCustomerScreen(
 
                 MenuCard(
                     title = "Status Pesanan",
-                    subtitle = "Pantau progress pesanan Anda",
+                    subtitle = "Pantau progress pesanan kamu",
                     icon = painterResource(R.drawable.baseline_timeline_24),
                     color = Color(0xFF4CAF50),
                     onClick = onGoToOrderStatus
@@ -250,7 +250,7 @@ fun HomeCustomerScreen(
 
                 MenuCard(
                     title = "Riwayat Pembelian",
-                    subtitle = "Lihat history transaksi Anda",
+                    subtitle = "Lihat history transaksi kamu",
                     icon = painterResource(R.drawable.logo_history),
                     color = Color(0xFF2196F3),
                     onClick = onGoToHistory
@@ -295,7 +295,7 @@ fun HomeCustomerScreen(
                 },
                 text = {
                     Text(
-                        "Apakah Anda yakin ingin keluar dari akun?",
+                        "Apakah kamu yakin ingin keluar dari akun?",
                         color = Color(0xFF5E6572)
                     )
                 },

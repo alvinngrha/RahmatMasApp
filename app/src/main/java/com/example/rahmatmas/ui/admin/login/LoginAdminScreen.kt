@@ -19,10 +19,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -122,52 +121,33 @@ fun LoginAdminScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Username",
-                fontSize = 14.sp,
-                textAlign = TextAlign.Start,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            TextField(
+            OutlinedTextField(
                 value = username,
                 onValueChange = { viewModel.updateUsername(it) }, // Update state when text changes
                 modifier = Modifier
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(15.dp),
                 singleLine = true,
-                placeholder = { Text(text = "Masukkan Username", fontSize = 12.sp) },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black.copy(alpha = 0.3f),
-                    unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                label = { Text(text = "Masukkan Username", fontSize = 12.sp) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFFFF9800),
+                    unfocusedBorderColor = Color.Black.copy(alpha = 0.3f),
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Password",
-                fontSize = 14.sp,
-                textAlign = TextAlign.Start,
-                fontWeight = FontWeight.SemiBold
-            )
-
-
-            TextField(
+            OutlinedTextField(
                 value = password,
                 onValueChange = { viewModel.updatePassword(it) }, // Update state when text changes
                 modifier = Modifier
                     .fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(15.dp),
-                placeholder = { Text(text = "Masukkan Password", fontSize = 12.sp) },
+                label = { Text(text = "Masukkan Password", fontSize = 12.sp) },
                 visualTransformation = PasswordVisualTransformation(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black.copy(alpha = 0.3f),
-                    unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFFFF9800),
+                    unfocusedBorderColor = Color.Black.copy(alpha = 0.3f)
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
