@@ -138,7 +138,7 @@ fun CheckoutScreen(
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Nomor HP") },
+                label = { Text("Nomor HP (yang terdaftar di WhatsApp)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 placeholder = { Text("Contoh: 08123456789") },
