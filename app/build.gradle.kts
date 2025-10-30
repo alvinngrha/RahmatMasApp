@@ -35,8 +35,14 @@ android {
 
         buildConfigField(
             "String",
-            "BASE_URL_ANEKA_LOGAM",
-            "\"https://logam-mulia-api.vercel.app/\""
+            "GOLD_PRICE_API_BASE_URL",
+            "\"https://gold.g.apised.com/\""
+        )
+
+        buildConfigField(
+            "String",
+            "GOLD_PRICE_API_KEY",
+            "\"sk_96dF576DB3DfB03af27A2988319f25F213861165532EF1BF\""
         )
 
         buildConfigField(

@@ -316,8 +316,8 @@ class TransactionRecordingViewModel(
             try {
                 val response = goldPriceRepository.getGoldPrice()
                 if (response.isSuccessful) {
-                    val goldData = response.body()?.data?.firstOrNull()
-                    val price = goldData?.sell?.toDouble()
+                    val goldData = goldPriceRepository.extractGoldMetalPrice(response.body())
+                    val price = goldData?.ask ?: goldData?.price ?: goldData?.price24k
                     if (price != null) {
                         _transactionUiState.value = _transactionUiState.value.copy(goldPrice = price)
                         onSuccess?.invoke()

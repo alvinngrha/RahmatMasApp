@@ -223,10 +223,12 @@ class CatalogViewModel(
             try {
                 val response = goldPriceRepository.getGoldPrice()
                 if (response.isSuccessful) {
-                    val goldData = response.body()?.data?.firstOrNull()
-                    if (goldData?.sell != null) {
+                    val goldData = goldPriceRepository.extractGoldMetalPrice(response.body())
+                    val price = goldData?.ask
+                        ?: goldData?.price
+                        ?: goldData?.price24k
+                    if (price != null) {
                         // Process gold data as needed
-                        val price = goldData.sell.toDouble()
                         _uiState.value = _uiState.value.copy(
                             goldPrice = price,
                             errorMessage = null

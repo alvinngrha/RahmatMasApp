@@ -140,7 +140,11 @@ class CheckoutViewModel : ViewModel() {
 
                 Log.d("CheckoutViewModel", "Fetching gold price...")
                 val goldPriceResponse = goldPriceRepository.getGoldPrice()
-                val hargaEmas = goldPriceResponse.body()?.data?.firstOrNull()?.sell?.toDouble() ?: 0.0
+                val goldMetal = goldPriceRepository.extractGoldMetalPrice(goldPriceResponse.body())
+                val hargaEmas = goldMetal?.ask
+                    ?: goldMetal?.price
+                    ?: goldMetal?.price24k
+                    ?: 0.0
 
                 if (hargaEmas <= 0) {
                     throw Exception("Tidak dapat memperoleh harga emas hari ini")

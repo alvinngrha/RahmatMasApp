@@ -12,10 +12,16 @@ class ApiConfig {
             val loggingInterceptor = HttpLoggingInterceptor()
                 .setLevel(HttpLoggingInterceptor.Level.BODY)
             val client = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                        .addHeader("x-api-key", BuildConfig.GOLD_PRICE_API_KEY)
+                        .build()
+                    chain.proceed(request)
+                }
                 .addInterceptor(loggingInterceptor)
                 .build()
             val retrofit = Retrofit.Builder()
-                .baseUrl(BuildConfig.BASE_URL_ANEKA_LOGAM)
+                .baseUrl(BuildConfig.GOLD_PRICE_API_BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build()

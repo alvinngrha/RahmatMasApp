@@ -104,16 +104,16 @@ class HomeAdminViewModel(
                 val response = goldPriceRepository.getGoldPrice()
                 if (response.isSuccessful) {
                     val goldPriceResponse = response.body()
-                    val goldData = goldPriceResponse?.data?.firstOrNull()
+                    val goldData = goldPriceRepository.extractGoldMetalPrice(goldPriceResponse)
 
                     if (goldData != null) {
-                        val buyPrice = goldData.buy?.let {
-                            formatCurrency(it.toDouble())
-                        } ?: "Data tidak tersedia"
+                        val buyPrice = goldData.bid?.let { formatCurrency(it) }
+                            ?: goldData.price?.let { formatCurrency(it) }
+                            ?: "Data tidak tersedia"
 
-                        val sellPrice = goldData.sell?.let {
-                            formatCurrency(it.toDouble())
-                        } ?: "Data tidak tersedia"
+                        val sellPrice = goldData.ask?.let { formatCurrency(it) }
+                            ?: goldData.price?.let { formatCurrency(it) }
+                            ?: "Data tidak tersedia"
 
                         _goldPriceState.value = GoldPriceUiState(
                             buyPrice = buyPrice,
