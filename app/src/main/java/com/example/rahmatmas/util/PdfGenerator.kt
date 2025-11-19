@@ -95,7 +95,7 @@ class PdfGenerator(private val context: Context) {
      */
     suspend fun generateMultipleTransactionReport(
         transactions: List<TransactionEntity>,
-        title: String = "Laporan Transaksi"
+        title: String = "Nota Transaksi"
     ): Result<String> {
         return withContext(Dispatchers.IO) {
             try {
@@ -120,7 +120,7 @@ class PdfGenerator(private val context: Context) {
                 }
 
                 // Save to accessible location
-                val fileName = "Laporan_Transaksi_${System.currentTimeMillis()}.pdf"
+                val fileName = "Nota_Transaksi_${System.currentTimeMillis()}.pdf"
                 val result = savePdfToAccessibleLocation(pdfDocument, fileName)
 
                 pdfDocument.close()
@@ -882,10 +882,10 @@ class PdfGenerator(private val context: Context) {
         val footerPaint = createPaint(DARK_TEXT, 11f)
         val mutedFooterPaint = createPaint(LIGHT_TEXT, 10f)
 
-        canvas.drawText("🏪 Toko Emas Rahmat Baru - Laporan Transaksi", MARGIN.toFloat(), footerY + 15f, footerPaint)
+        canvas.drawText("🏪 Toko Emas Rahmat Baru - Nota Transaksi", MARGIN.toFloat(), footerY + 15f, footerPaint)
         canvas.drawText("📱 Hubungi kami: 0813-5036-6540 | 📧 Email: akhmadsujana2@gmail.com",
             MARGIN.toFloat(), footerY + 30f, mutedFooterPaint)
-        canvas.drawText("⚠️ Jika menjual kembali, harap sertakan laporan ini sebagai bukti pembelian.",
+        canvas.drawText("⚠️ Jika menjual kembali, harap sertakan Nota ini sebagai bukti pembelian.",
             MARGIN.toFloat(), footerY + 44f, mutedFooterPaint)
 
         // Page indicator with modern styling
