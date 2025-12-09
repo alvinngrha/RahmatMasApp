@@ -1,6 +1,7 @@
 package com.example.rahmatmas.ui.admin.transactionhistory
 
 import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -91,11 +92,21 @@ fun TransactionHistoryScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(Unit) {
+        Log.i("AdminHistoryScreen", "Riwayat transaksi admin ditampilkan")
+    }
+
     // Handle snackbar messages
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             viewModel.clearSnackbarMessage()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { message ->
+            Log.e("AdminHistoryScreen", "Gagal membuka riwayat transaksi admin: $message")
         }
     }
 

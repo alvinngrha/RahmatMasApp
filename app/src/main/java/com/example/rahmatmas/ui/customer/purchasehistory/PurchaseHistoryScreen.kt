@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.customer.purchasehistory
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -86,6 +87,16 @@ fun PurchaseHistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { viewModel.loadHistory() }
+
+    LaunchedEffect("purchase_history_screen") {
+        Log.i("PurchaseHistoryScreen", "Riwayat pembelian pelanggan ditampilkan")
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            Log.e("PurchaseHistoryScreen", "Gagal membuka riwayat pembelian: $message")
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },

@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.customer.catalog
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -89,9 +90,14 @@ fun CatalogScreen(
         viewModel.loadInitialData()
     }
 
+    LaunchedEffect("catalog_screen") {
+        Log.i("CustomerCatalogScreen", "Katalog pelanggan siap digunakan")
+    }
+
     // Handle error messages
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
+            Log.e("CustomerCatalogScreen", "Gagal memuat katalog pelanggan: $message")
             snackbarHostState.showSnackbar(message)
             viewModel.clearErrorMessage()
         }

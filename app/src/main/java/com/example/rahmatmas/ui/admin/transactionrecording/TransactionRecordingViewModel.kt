@@ -3,6 +3,7 @@ package com.example.rahmatmas.ui.admin.transactionrecording
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.local.dao.TransactionEntity
@@ -373,6 +374,12 @@ class TransactionRecordingViewModel(
                             saveSuccess = true,
                             lastSaveWasOnline = currentState.isOnline
                         )
+                        val berat = currentState.beratEmas.toDoubleOrNull() ?: 0.0
+                        val hargaDasar = currentState.hargaDasarPerGram.toDoubleOrNull() ?: 0.0
+                        Log.i(
+                            "GoldTransaction",
+                            "Transaksi emas $transactionId tercatat: ${berat}gr @$hargaDasar"
+                        )
 
                         // Update stock in Supabase if online and a stock item was selected
                         viewModelScope.launch {
@@ -398,6 +405,11 @@ class TransactionRecordingViewModel(
                         updateUnsyncedCount()
                     },
                     onFailure = { exception ->
+                        Log.e(
+                            "GoldTransaction",
+                            "Gagal mencatat transaksi emas ${currentState.idTransaksi.ifBlank { "baru" }}: ${exception.message}",
+                            exception
+                        )
                         _transactionUiState.value = currentState.copy(
                             isSaving = false,
                             error = "Gagal menyimpan transaksi: ${exception.message}",
@@ -406,6 +418,7 @@ class TransactionRecordingViewModel(
                     }
                 )
             } catch (e: Exception) {
+                Log.e("GoldTransaction", "Gagal mencatat transaksi emas: ${e.message}", e)
                 _transactionUiState.value = currentState.copy(
                     isSaving = false,
                     error = "Terjadi kesalahan: ${e.message}",

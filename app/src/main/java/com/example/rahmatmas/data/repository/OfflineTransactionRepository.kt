@@ -243,12 +243,14 @@ class OfflineTransactionRepository(
 
     // Sync all unsynced transactions
     suspend fun syncTransactions(): Result<Unit> {
+        val mode = if (isCurrentlyOnline) "online" else "offline"
+        var processed = 0
         return try {
             val unsyncedTransactions = transactionDao.getUnsyncedTransactions()
             if (unsyncedTransactions.isEmpty()) {
+                Log.i("SyncEngine", "Sinkronisasi $mode selesai, 0 item terselaraskan")
                 return Result.success(Unit)
             }
-            Log.d("OfflineTransactionRepo", "Syncing ${unsyncedTransactions.size} transactions")
 
             for (entity in unsyncedTransactions) {
 
@@ -289,12 +291,20 @@ class OfflineTransactionRepository(
                 supabaseClient.from("transactions").upsert(supabaseTransaction)
                 // Update Room: mark as synced
                 transactionDao.updateTransaction(entity.copy(isSynced = true))
+                processed++
             }
 
-            Log.d("OfflineTransactionRepo", "Successfully synced transactions")
+            Log.i(
+                "SyncEngine",
+                "Sinkronisasi $mode selesai, ${unsyncedTransactions.size} item terselaraskan"
+            )
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("OfflineTransactionRepo", "Error syncing transactions", e)
+            Log.e(
+                "SyncEngine",
+                "Sinkronisasi $mode gagal di offset $processed: ${e.message}",
+                e
+            )
             Result.failure(e)
         }
     }
@@ -337,10 +347,18 @@ class OfflineTransactionRepository(
             )
             supabaseClient.from("transactions").upsert(supabaseTransaction)
             transactionDao.updateTransaction(transaction.copy(isSynced = true))
-            Log.d("OfflineTransactionRepo", "Successfully synced single transaction: ${transaction.id}")
+            val mode = if (isCurrentlyOnline) "online" else "offline"
+            Log.i(
+                "SyncEngine",
+                "Sinkronisasi $mode selesai, 1 item terselaraskan (ID: ${transaction.id})"
+            )
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("OfflineTransactionRepo", "Error syncing single transaction", e)
+            Log.e(
+                "SyncEngine",
+                "Sinkronisasi ${if (isCurrentlyOnline) "online" else "offline"} gagal di offset 0: ${e.message}",
+                e
+            )
             Result.failure(e)
         }
     }

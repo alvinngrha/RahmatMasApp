@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.admin.login
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,12 +76,14 @@ fun LoginAdminScreen(
                     onLoginSuccess()
                     viewModel.resetLoginState()
                     viewModel.clearForm()
+                    Log.d("Login Admin", "Login berhasil")
                 }
 
                 is AuthResponse.Error -> {
                     snackbarMessage =
                         (loginState as AuthResponse.Error).message ?: "Terjadi kesalahan"
                     showSnackbar = true
+                    Log.d("Login Admin", "Login gagal: ${(loginState as AuthResponse.Error).message}")
                 }
 
                 null -> { /* No action needed */

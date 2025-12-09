@@ -59,16 +59,18 @@ class AuthManager {
                 provider = Google
             }
 
+            val accountIdentifier = googleIdTokenCredential.displayName ?: googleIdTokenCredential.id
+            Log.i("GoogleLogin", "Login Google berhasil untuk ${accountIdentifier ?: "unknown"}")
             AuthResponse.Success
 
         } catch (e: GetCredentialException) {
-            Log.e("AuthManager", "Error getting credential", e)
+            Log.e("GoogleLogin", "Login Google gagal: ${e.message}", e)
             AuthResponse.Error("Login gagal: ${e.message}")
         } catch (e: GoogleIdTokenParsingException) {
-            Log.e("AuthManager", "Error parsing Google ID token", e)
+            Log.e("GoogleLogin", "Login Google gagal: ${e.message}", e)
             AuthResponse.Error("Error parsing token: ${e.message}")
         } catch (e: Exception) {
-            Log.e("AuthManager", "Unexpected error during sign in", e)
+            Log.e("GoogleLogin", "Login Google gagal: ${e.message}", e)
             AuthResponse.Error("Login gagal: ${e.message}")
         }
     }

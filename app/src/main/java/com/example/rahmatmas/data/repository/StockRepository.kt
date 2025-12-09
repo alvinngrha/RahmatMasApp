@@ -107,11 +107,11 @@ class StockRepository(
             )
 
             supabaseClient.from("stocks").insert(stock)
-            Log.d("StockRepository", "Stock saved successfully: $newStockId")
+            Log.i("StockManager", "Stok baru $newStockId ditambahkan (${jumlahStok} unit)")
 
             Result.success(newStockId)
         } catch (e: Exception) {
-            Log.e("StockRepository", "Error saving stock", e)
+            Log.e("StockManager", "Gagal menambah stok baru: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -134,9 +134,10 @@ class StockRepository(
     suspend fun updateStock(stock: SupabaseStock): Result<Unit> {
         return try {
             supabaseClient.from("stocks").upsert(stock)
+            Log.i("StockManager", "Stok ${stock.id_barang} diperbarui menjadi ${stock.jumlah_stok} unit")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("StockRepository", "Error updating stock", e)
+            Log.e("StockManager", "Gagal memperbarui stok ${stock.id_barang}: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -150,10 +151,10 @@ class StockRepository(
                         eq("id_barang", id)
                     }
                 }
-            Log.d("StockRepository", "Stock deleted successfully: $id")
+            Log.w("StockManager", "Stok $id dihapus dari katalog")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("StockRepository", "Error deleting stock", e)
+            Log.e("StockManager", "Gagal menghapus stok $id: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -176,9 +177,10 @@ class StockRepository(
                 updated_at = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()).format(java.util.Date())
             )
 
-            updateStock(updatedStock)
+            val result = updateStock(updatedStock)
+            result
         } catch (e: Exception) {
-            Log.e("StockRepository", "Error reducing stock", e)
+            Log.e("StockManager", "Gagal memperbarui stok $id: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -197,9 +199,10 @@ class StockRepository(
                 updated_at = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()).format(java.util.Date())
             )
 
-            updateStock(updatedStock)
+            val result = updateStock(updatedStock)
+            result
         } catch (e: Exception) {
-            Log.e("StockRepository", "Error increasing stock", e)
+            Log.e("StockManager", "Gagal memperbarui stok $id: ${e.message}", e)
             Result.failure(e)
         }
     }

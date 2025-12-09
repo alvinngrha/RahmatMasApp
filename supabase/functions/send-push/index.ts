@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { GoogleAuth } from "npm:google-auth-library@8.9.0";
 serve(async (req)=>{
   try {
-    const { userId, title, body } = await req.json();
+    const { userId, title, body, userType } = await req.json();
     // Determine the Supabase project URL. Prefer the `SUPABASE_URL` secret but
     // fall back to the request headers (`x-forwarded-host` / `host`) so the
     // function still works even when the secret is missing.
@@ -49,24 +49,26 @@ serve(async (req)=>{
     const accessToken = await client.getAccessToken();
     const results: Array<{ token: string; ok: boolean; status: number; body?: unknown }> = [];
     await Promise.all(tokens?.map(async ({ token }) => {
+      const message: Record<string, unknown> = {
+        token,
+        notification: { title, body },
+        android: {
+          priority: "HIGH",
+          notification: {
+            channel_id: "rahmatmas_push"
+          }
+        }
+      };
+      if (userType) {
+        message.data = { userType };
+      }
       const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`
         },
-        body: JSON.stringify({
-          message: {
-            token,
-            notification: { title, body },
-            android: {
-              priority: "HIGH",
-              notification: {
-                channel_id: "rahmatmas_push"
-              }
-            }
-          }
-        })
+        body: JSON.stringify({ message })
       });
       let json: unknown = undefined;
       try { json = await res.json(); } catch (_) {}

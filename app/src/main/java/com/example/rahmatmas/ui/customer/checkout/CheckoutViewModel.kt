@@ -172,10 +172,12 @@ class CheckoutViewModel : ViewModel() {
                     photo_path = stock.photo_path
                 )
 
-                Log.d("CheckoutViewModel", "Placing order in database...")
                 orderRepository.placeOrder(order, orderItem)
 
-                Log.d("CheckoutViewModel", "Order placed successfully!")
+                Log.i(
+                    "CheckoutFlow",
+                    "Checkout pesanan $orderId selesai, total $totalHarga"
+                )
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
@@ -183,7 +185,7 @@ class CheckoutViewModel : ViewModel() {
                     processingOrderId = null // Reset after success
                 )
             } catch (e: Exception) {
-                Log.e("CheckoutViewModel", "Error placing order", e)
+                Log.e("CheckoutFlow", "Checkout pesanan gagal: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = "Gagal memproses pesanan: ${e.message}",

@@ -33,7 +33,7 @@ import java.util.Locale
 class PdfGenerator(private val context: Context) {
 
     companion object {
-        private const val TAG = "PdfGenerator"
+        private const val TAG = "InvoiceGenerator"
         private const val PAGE_WIDTH = 595 // A4 width in points
         private const val PAGE_HEIGHT = 842 // A4 height in points
         private const val MARGIN = 40
@@ -72,6 +72,11 @@ class PdfGenerator(private val context: Context) {
                 pdfDocument.close()
 
                 if (result.isSuccess) {
+                    val savedPath = result.getOrNull()
+                    Log.i(
+                        TAG,
+                        "Nota digital ${transaction.id}.pdf berhasil dibuat di ${savedPath ?: "unknown"}"
+                    )
                     // Show notification to user about successful save
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
@@ -84,7 +89,7 @@ class PdfGenerator(private val context: Context) {
 
                 result
             } catch (e: Exception) {
-                Log.e(TAG, "Error generating PDF", e)
+                Log.e(TAG, "Gagal membuat nota ${transaction.id}: ${e.message}", e)
                 Result.failure(e)
             }
         }
@@ -126,12 +131,17 @@ class PdfGenerator(private val context: Context) {
                 pdfDocument.close()
 
                 if (result.isSuccess) {
+                    val savedPath = result.getOrNull()
+                    Log.i(
+                        TAG,
+                        "Nota digital $fileName berhasil dibuat di ${savedPath ?: "unknown"}"
+                    )
                     withContext(Dispatchers.Main) {
                     }
                 }
                 result
             } catch (e: Exception) {
-                Log.e(TAG, "Error generating multiple transaction PDF", e)
+                Log.e(TAG, "Gagal membuat nota $title: ${e.message}", e)
                 Result.failure(e)
             }
         }

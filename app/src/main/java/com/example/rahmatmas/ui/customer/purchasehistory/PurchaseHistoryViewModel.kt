@@ -1,6 +1,7 @@
 package com.example.rahmatmas.ui.customer.purchasehistory
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.network.NetworkMonitor
@@ -52,6 +53,7 @@ class PurchaseHistoryViewModel(
             _uiState.value = _uiState.value.copy(
                 errorMessage = "Memerlukan koneksi internet untuk memuat riwayat"
             )
+            Log.e("PurchaseHistoryScreen", "Gagal membuka riwayat pembelian: tidak ada koneksi")
             return
         }
 
@@ -60,6 +62,7 @@ class PurchaseHistoryViewModel(
             _uiState.value = _uiState.value.copy(
                 errorMessage = "Anda harus login terlebih dahulu"
             )
+            Log.e("PurchaseHistoryScreen", "Gagal membuka riwayat pembelian: belum login")
             return
         }
 
@@ -71,6 +74,7 @@ class PurchaseHistoryViewModel(
                 _uiState.value = _uiState.value.copy(isLoading = false, purchases = completed)
                 loadStockDetails(completed)
             } catch (e: Exception) {
+                Log.e("PurchaseHistoryScreen", "Gagal membuka riwayat pembelian: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = "Gagal memuat riwayat: ${e.message}"
@@ -98,4 +102,3 @@ class PurchaseHistoryViewModel(
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 }
-

@@ -42,8 +42,10 @@ class OrderRepository {
         sendPushNotification(
             userId = "admin_notifications",
             title = "Pesanan Baru Nih",
-            body = "Horee, ada pesanan baru dari ${order.recipient_name}"
+            body = "Horee, ada pesanan baru dari ${order.recipient_name}",
+            userType = "admin"
         )
+        Log.d("OrderRepository", "Pesanan baru masuk dari ${order.recipient_name}")
     }
 
     suspend fun getOrderItems(orderId: String): List<SupabaseOrderItem> {
@@ -106,7 +108,8 @@ class OrderRepository {
             sendPushNotification(
                 userId = userId,
                 title = "Status Pesanan Kamu Diperbarui",
-                body = "Status pesanan kamu: $status"
+                body = "Status pesanan kamu: $status",
+                userType = "customer"
             )
         }
 
@@ -116,7 +119,8 @@ class OrderRepository {
             sendPushNotification(
                 userId = "admin_notifications",
                 title = "Pesanan Dibatalkan",
-                body = "Pesanan dibatalkan oleh $customerName"
+                body = "Pesanan dibatalkan oleh $customerName",
+                userType = "admin"
             )
         }
     }
@@ -166,14 +170,25 @@ class OrderRepository {
         }.filter { it.user_id == userId }
     }
 
-    private suspend fun sendPushNotification(userId: String, title: String, body: String) {
+    private suspend fun sendPushNotification(
+        userId: String,
+        title: String,
+        body: String,
+        userType: String
+    ) {
         try {
-            val payload = PushNotificationRequest(userId = userId, title = title, body = body)
+            val payload = PushNotificationRequest(
+                userId = userId,
+                title = title,
+                body = body,
+                userType = userType
+            )
             val result = client.functions.invoke("send-push", body = payload)
-            Log.d("PushNotification", "send-push response: $result")
+            val tag = if (userType == "admin") "NotificationAdmin" else "NotificationCustomer"
+            Log.d(tag, "send-push response: $result")
         } catch (e: Exception) {
-            // Log the error but don't let it fail the main operation
-            Log.e("PushNotification", "Failed to send push notification", e)
+            val tag = if (userType == "admin") "NotificationAdmin" else "NotificationCustomer"
+            Log.e(tag, "Notifikasi ${if (userType == "admin") "admin" else "pelanggan"} gagal diproses: ${e.message}", e)
         }
     }
 }

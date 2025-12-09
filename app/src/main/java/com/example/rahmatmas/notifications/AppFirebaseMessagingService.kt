@@ -1,6 +1,7 @@
 package com.example.rahmatmas.notifications
 
 import android.os.Build
+import android.util.Log
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.notifications.NotificationUtils.ensureChannel
 import com.example.rahmatmas.notifications.NotificationUtils.showNotification
@@ -47,11 +48,17 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
         // Show a notification when app is in foreground
         val title = message.notification?.title ?: message.data["title"] ?: "RahmatMas"
         val body = message.notification?.body ?: message.data["body"] ?: ""
+        val userType = message.data["userType"] ?: "customer"
+        val notificationId = message.messageId ?: System.currentTimeMillis().toString()
+        val tag = if (userType == "admin") "NotificationAdmin" else "NotificationCustomer"
         if (title.isNotBlank() || body.isNotBlank()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ensureChannel(applicationContext)
             }
+            Log.i(tag, "Notifikasi ${if (userType == "admin") "admin" else "pelanggan"} $notificationId diterima")
             showNotification(applicationContext, title, body)
+        } else {
+            Log.e(tag, "Notifikasi ${if (userType == "admin") "admin" else "pelanggan"} gagal diproses: konten kosong (id=$notificationId)")
         }
     }
 }

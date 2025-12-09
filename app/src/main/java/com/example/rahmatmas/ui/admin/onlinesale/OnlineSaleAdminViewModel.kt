@@ -1,6 +1,7 @@
 package com.example.rahmatmas.ui.admin.onlinesale
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rahmatmas.data.local.db.AppDatabase
@@ -73,6 +74,7 @@ class OnlineSaleAdminViewModel(
 
         viewModelScope.launch {
             orderRepository.observeNewOrders().collect { order ->
+                Log.i("AdminOrders", "Pesanan online ${order.id} masuk ke dashboard admin")
                 _newOrders.emit(order)
                 loadOrders()
             }
@@ -96,6 +98,7 @@ class OnlineSaleAdminViewModel(
                 loadStockDetails(orders)
 
             } catch (e: Exception) {
+                Log.e("AdminOrders", "Gagal memuat pesanan online: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = e.message
@@ -148,6 +151,10 @@ class OnlineSaleAdminViewModel(
         viewModelScope.launch {
             try {
                 orderRepository.updateOrderStatus(order.id, newStatus.toDbString())
+                Log.i(
+                    "OrderStatus",
+                    "Status pesanan ${order.id} berubah dari ${order.status} ke ${newStatus.toDbString()}"
+                )
                 // When order completed, record into transaction history
                 val newTransactionId = "RB-${UUID.randomUUID()}"
                 if (newStatus == OrderStatus.COMPLETED) {
@@ -169,6 +176,11 @@ class OnlineSaleAdminViewModel(
                 }
                 loadOrders() // Refresh orders
             } catch (e: Exception) {
+                Log.e(
+                    "OrderStatus",
+                    "Gagal mengubah status pesanan ${order.id}: ${e.message}",
+                    e
+                )
                 _uiState.value = _uiState.value.copy(errorMessage = e.message)
             }
         }

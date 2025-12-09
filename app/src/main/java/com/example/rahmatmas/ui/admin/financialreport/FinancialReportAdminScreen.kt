@@ -1,5 +1,6 @@
 package com.example.rahmatmas.ui.admin.financialreport
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -41,6 +42,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -85,6 +87,10 @@ fun FinancialReportAdminScreen(
         factory = FinancialReportAdminViewModelFactory(context)
     )
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        Log.i("FinanceReportScreen", "Laporan keuangan berhasil dibuka")
+    }
 
     Scaffold(
         topBar = {
