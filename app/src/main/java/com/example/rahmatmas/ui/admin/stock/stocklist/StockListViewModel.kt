@@ -3,6 +3,7 @@ package com.example.rahmatmas.ui.admin.stock.stocklist
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.rahmatmas.BuildConfig
 import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.repository.StockRepository
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
@@ -15,8 +16,15 @@ data class StockListUiState(
     val isLoading: Boolean = false,
     val isOnline: Boolean = true,
     val snackbarMessage: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val showPinDialog: Boolean = false,
+    val pendingAction: PendingStockAction? = null
 )
+
+sealed class PendingStockAction {
+    data class Edit(val stock: SupabaseStock) : PendingStockAction()
+    data class Delete(val stockId: String) : PendingStockAction()
+}
 
 class StockListViewModel(
     private val context: Context
@@ -121,6 +129,49 @@ class StockListViewModel(
 
     fun refreshData() {
         loadStocks()
+    }
+
+    // PIN Access Methods
+    fun requestEditStock(stock: SupabaseStock) {
+        _uiState.value = _uiState.value.copy(
+            showPinDialog = true,
+            pendingAction = PendingStockAction.Edit(stock)
+        )
+    }
+
+    fun requestDeleteStock(stockId: String) {
+        _uiState.value = _uiState.value.copy(
+            showPinDialog = true,
+            pendingAction = PendingStockAction.Delete(stockId)
+        )
+    }
+
+    fun validatePin(pin: String): Boolean {
+        return pin == BuildConfig.STOCK_ACCESS_PIN
+    }
+
+    fun executePendingAction() {
+        val action = _uiState.value.pendingAction ?: return
+
+        when (action) {
+            is PendingStockAction.Edit -> {
+                // Action will be handled by navigation in the screen
+                // Just keep the action for the screen to use
+            }
+            is PendingStockAction.Delete -> {
+                deleteStock(action.stockId)
+            }
+        }
+
+        // Clear pending action after execution
+        _uiState.value = _uiState.value.copy(pendingAction = null)
+    }
+
+    fun dismissPinDialog() {
+        _uiState.value = _uiState.value.copy(
+            showPinDialog = false,
+            pendingAction = null
+        )
     }
 
     fun updateStock(stock: SupabaseStock) {

@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -61,6 +63,15 @@ android {
             "String",
             "GOOGLE_WEB_CLIENT_ID",
             "\"426296330523-f7h31tm1o4ip4hjamhnspa8vij8t18is.apps.googleusercontent.com\""
+        )
+
+        buildConfigField(
+            "String",
+            "STOCK_ACCESS_PIN",
+            "\"${gradleLocalProperties(
+                rootDir,
+                providers = providers
+            ).getProperty("STOCK_ACCESS_PIN")}\""
         )
 
     }

@@ -61,6 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.rahmatmas.R
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
+import com.example.rahmatmas.ui.admin.stock.components.PinAccessDialog
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -287,12 +288,36 @@ fun StockListScreen(
                     items(stocks) { stock ->
                         StockItem(
                             stock = stock,
-                            onEditClick = { onEditStockClick(stock) },
-                            onDeleteClick = { viewModel.deleteStock(stock.id_barang) }
+                            onEditClick = { viewModel.requestEditStock(stock) }, // Request PIN first
+                            onDeleteClick = { viewModel.requestDeleteStock(stock.id_barang) } // Request PIN first
                         )
                     }
                 }
             }
+        }
+
+        // PIN Access Dialog
+        if (uiState.showPinDialog) {
+            val actionMessage = when (uiState.pendingAction) {
+                is PendingStockAction.Edit -> "Masukkan PIN untuk mengedit stok"
+                is PendingStockAction.Delete -> "Masukkan PIN untuk menghapus stok"
+                else -> "Masukkan PIN untuk melanjutkan"
+            }
+
+            PinAccessDialog(
+                title = "PIN Akses Diperlukan",
+                message = actionMessage,
+                onDismiss = { viewModel.dismissPinDialog() },
+                onPinConfirmed = {
+                    // Execute pending action after PIN confirmed
+                    val action = uiState.pendingAction
+                    if (action is PendingStockAction.Edit) {
+                        onEditStockClick(action.stock)
+                    }
+                    viewModel.executePendingAction()
+                },
+                onPinValidation = { pin -> viewModel.validatePin(pin) }
+            )
         }
     }
 }
