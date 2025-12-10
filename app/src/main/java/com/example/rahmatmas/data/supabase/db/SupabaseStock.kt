@@ -11,6 +11,7 @@ data class SupabaseStock(
     val kadar_persen: String,
     val berat_emas: Double,
     val ongkos_per_gram: Double,
+    val harga_modal: Double,
     val photo_path: String? = null,
     val created_at: String? = null,
     val updated_at: String? = null

@@ -399,6 +399,14 @@ fun StockItem(
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
+                    Text(
+                        text = "Harga Modal: ${
+                            currencyFormat.format(stock.harga_modal).replace("Rp", "Rp ")
+                        }",
+                        fontSize = 12.sp,
+                        color = Color(0xFF2E7D32),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             Spacer(modifier = Modifier.height(16.dp))
 

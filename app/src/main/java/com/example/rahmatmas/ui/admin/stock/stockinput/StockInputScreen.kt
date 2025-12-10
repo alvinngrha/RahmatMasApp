@@ -457,6 +457,25 @@ fun StockInputScreen(
                     )
                 )
 
+                OutlinedTextField(
+                    value = formatNumberInput(uiState.hargaModal),
+                    onValueChange = viewModel::updateHargaModal,
+                    label = { Text("Harga Modal per Unit") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = uiState.validationErrors.containsKey("hargaModal"),
+                    shape = RoundedCornerShape(12.dp),
+                    supportingText = {
+                        uiState.validationErrors["hargaModal"]?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFFF9800),
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.2f),
+                    )
+                )
+
                 // Save Button
                 Button(
                     onClick = viewModel::saveStock,

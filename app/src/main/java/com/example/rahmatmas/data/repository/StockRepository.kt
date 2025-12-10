@@ -7,9 +7,9 @@ import com.example.rahmatmas.data.network.NetworkMonitor
 import com.example.rahmatmas.data.supabase.SupabaseModule
 import com.example.rahmatmas.data.supabase.db.SupabaseStock
 import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.CancellationException
 import java.util.UUID
 
 // Data class for dynamic price calculation
@@ -71,7 +71,8 @@ class StockRepository(
         kadarEmas: String,
         kadarPersen: String,
         beratEmas: Double,
-        ongkosPerGram: Double, // Changed from ongkosPerGram
+        ongkosPerGram: Double,
+        hargaModal: Double, // Parameter baru untuk harga modal
         photoUri: Uri? = null
     ): Result<String> {
         return try {
@@ -101,13 +102,13 @@ class StockRepository(
                 kadar_emas = kadarEmas,
                 kadar_persen = kadarPersen,
                 berat_emas = beratEmas,
-                ongkos_per_gram = ongkosPerGram, // Changed from ongkos_per_gram
+                ongkos_per_gram = ongkosPerGram,
+                harga_modal = hargaModal, // Tambahkan harga modal
                 photo_path = cloudPhotoUrl
-                // Removed: harga_dasar_per_gram and total_harga_barang
             )
 
             supabaseClient.from("stocks").insert(stock)
-            Log.i("StockManager", "Stok baru $newStockId ditambahkan (${jumlahStok} unit)")
+            Log.i("StockManager", "Stok baru $newStockId ditambahkan (${jumlahStok} unit) dengan harga modal Rp ${hargaModal}")
 
             Result.success(newStockId)
         } catch (e: Exception) {
@@ -134,7 +135,7 @@ class StockRepository(
     suspend fun updateStock(stock: SupabaseStock): Result<Unit> {
         return try {
             supabaseClient.from("stocks").upsert(stock)
-            Log.i("StockManager", "Stok ${stock.id_barang} diperbarui menjadi ${stock.jumlah_stok} unit")
+            Log.i("StockManager", "Stok ${stock.id_barang} diperbarui menjadi ${stock.jumlah_stok} unit dengan harga modal Rp ${stock.harga_modal}")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("StockManager", "Gagal memperbarui stok ${stock.id_barang}: ${e.message}", e)

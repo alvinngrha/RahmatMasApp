@@ -23,6 +23,7 @@ data class StockInputUiState(
     val kadarEmas: String = "",
     val kadarPersen: String = "",
     val beratEmas: String = "",
+    val hargaModal: String = "",
     val ongkosPerGram: String = "", // Changed from ongkosPerGram
     val selectedPhotoUri: Uri? = null,
     val existingPhotoUrl: String? = null,
@@ -105,6 +106,20 @@ class StockInputViewModel(
         }
     }
 
+    fun updateHargaModal(value: String) {
+        if (value.isEmpty()) {
+            _uiState.value = _uiState.value.copy(hargaModal = "")
+            clearValidationError("hargaModal")
+            return
+        }
+
+        val digitsOnly = value.filter(Char::isDigit)
+        if (digitsOnly.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(hargaModal = digitsOnly)
+            clearValidationError("hargaModal")
+        }
+    }
+
     fun updateOngkos(value: String) {
         if (value.isEmpty()) {
             _uiState.value = _uiState.value.copy(ongkosPerGram = "")
@@ -132,6 +147,7 @@ class StockInputViewModel(
             kadarPersen = stock.kadar_persen,
             beratEmas = stock.berat_emas.toString(),
             ongkosPerGram = stock.ongkos_per_gram.toLong().toString(),
+            hargaModal = stock.harga_modal.toLong().toString(),
             existingPhotoUrl = stock.photo_path,
             isEdit = true
         )
@@ -186,6 +202,16 @@ class StockInputViewModel(
             }
         }
 
+        // Validasi harga modal
+        if (currentState.hargaModal.isBlank()) {
+            errors["hargaModal"] = "Harga modal tidak boleh kosong"
+        } else {
+            val hargaModal = currentState.hargaModal.toDoubleOrNull()
+            if (hargaModal == null || hargaModal <= 0) {
+                errors["hargaModal"] = "Harga modal harus berupa angka positif"
+            }
+        }
+
         return errors
     }
 
@@ -221,6 +247,7 @@ class StockInputViewModel(
                     kadarPersen = currentState.kadarPersen,
                     beratEmas = currentState.beratEmas.toDouble(),
                     ongkosPerGram = currentState.ongkosPerGram.toDouble(), // Changed from ongkosPerGram
+                    hargaModal = currentState.hargaModal.toDouble(),
                     photoUri = currentState.selectedPhotoUri
                 )
 
@@ -288,6 +315,7 @@ class StockInputViewModel(
                 kadar_persen = currentState.kadarPersen,
                 berat_emas = currentState.beratEmas.toDouble(),
                 ongkos_per_gram = currentState.ongkosPerGram.toDouble(),
+                harga_modal = currentState.hargaModal.toDouble(),
                 photo_path = photoUrl,
                 updated_at = SimpleDateFormat(
                     "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
